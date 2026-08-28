@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#07131f" />
     <meta name="description" content="Visualizador de empaquetamiento del Poliducto Libertad–Pascuales." />
-    <title>Control de Empaquetamiento | Libertad–Pascuales</title>
+    <title>Estación Reductora Pascuales | Control de Empaquetamiento</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -17,7 +17,7 @@
         <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
         <div>
           <p>CONTROL OPERATIVO</p>
-          <h1>Poliducto Libertad–Pascuales</h1>
+          <h1>Estación Reductora Pascuales</h1>
         </div>
       </div>
       <div class="status"><span></span> Cálculo activo</div>
@@ -31,6 +31,26 @@
         <article><span>Ocupación calculada</span><strong id="occupancy">100 <small>%</small></strong></article>
       </section>
 
+      <section class="flow-console" aria-label="Registro de transferencia">
+        <div class="flow-monitor">
+          <span class="eyebrow">CAUDAL ENVIADO</span>
+          <div class="flow-reading"><strong id="flowDisplay">0,00</strong><span>BBL/H</span></div>
+          <div class="flow-pulse"><i></i><span>Lectura ingresada por el operador</span></div>
+        </div>
+        <div class="transfer-controls">
+          <div class="console-title">
+            <div><span class="eyebrow">TRANSFERENCIA</span><h2>Registrar movimiento</h2></div>
+            <span class="transfer-route">Primera partida ← volumen → última partida</span>
+          </div>
+          <div class="control-grid">
+            <label>Caudal actual <span>BBL/H</span><input id="currentFlow" type="number" min="0" step="any" value="0" inputmode="decimal"></label>
+            <label>Volumen transferido <span>BBL</span><input id="transferVolume" type="number" min="0" step="any" value="0" inputmode="decimal"></label>
+            <button id="applyTransfer" class="button primary transfer-button" type="button">Registrar transferencia</button>
+          </div>
+          <p id="transferMessage" class="transfer-message" aria-live="polite">Ingrese el caudal actual y el volumen que desea registrar.</p>
+        </div>
+      </section>
+
       <section class="workspace">
         <article class="panel inputs-panel">
           <div class="panel-head">
@@ -40,7 +60,7 @@
           <p class="hint">Actualice los datos; la posición de cada producto se recalcula automáticamente.</p>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Partida</th><th>Producto</th><th>Envía</th><th>Recibe</th><th>En ducto</th><th></th></tr></thead>
+              <thead><tr><th>Partida</th><th>Producto</th><th>Bombeado (BBL)</th><th>Recibe (BBL)</th><th>En ducto</th><th></th></tr></thead>
               <tbody id="productRows"></tbody>
             </table>
           </div>

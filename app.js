@@ -6,6 +6,7 @@ const initialRows = [
   { batch: "128", product: "DIESEL OIL", sent: 36850, received: 0 }
 ];
 let rows = structuredClone(initialRows);
+let currentFlow = 0;
 
 const $ = (selector) => document.querySelector(selector);
 const fmt = (n, digits = 0) => new Intl.NumberFormat("es-EC", { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(n);
@@ -43,6 +44,7 @@ function render() {
   $("#totalVolume").innerHTML = `${fmt(total)} <small>u</small>`;
   $("#activeProducts").textContent = normalized.filter(row => row.remaining > 0).length;
   $("#occupancy").innerHTML = `${total > 0 ? "100" : "0"} <small>%</small>`;
+  $("#flowDisplay").textContent = fmt(currentFlow, 2);
   $("#emptyState").hidden = total > 0;
 
   const active = segments.filter(row => row.remaining > 0);
@@ -76,6 +78,35 @@ document.addEventListener("click", event => {
 });
 
 $("#addRow").addEventListener("click", () => { rows.push({ batch: "", product: "NUEVO PRODUCTO", sent: 0, received: 0 }); render(); });
-$("#resetData").addEventListener("click", () => { rows = structuredClone(initialRows); render(); });
+$("#currentFlow").addEventListener("input", event => { currentFlow = safeNumber(event.target.value); $("#flowDisplay").textContent = fmt(currentFlow, 2); });
+$("#applyTransfer").addEventListener("click", () => {
+  const volume = safeNumber($("#transferVolume").value);
+  const message = $("#transferMessage");
+  if (!rows.length) {
+    message.textContent = "Agregue al menos una partida antes de registrar la transferencia.";
+    message.className = "transfer-message";
+    return;
+  }
+  if (volume <= 0) {
+    message.textContent = "Ingrese un volumen transferido mayor que cero.";
+    message.className = "transfer-message";
+    return;
+  }
+  rows[0].received = safeNumber(rows[0].received) + volume;
+  rows[rows.length - 1].sent = safeNumber(rows[rows.length - 1].sent) + volume;
+  message.textContent = `${fmt(volume, 2)} BBL registrados: RECIBE de ${rows[0].product || "la primera partida"} y BOMBEADO de ${rows[rows.length - 1].product || "la última partida"}.`;
+  message.className = "transfer-message success";
+  $("#transferVolume").value = 0;
+  render();
+});
+$("#resetData").addEventListener("click", () => {
+  rows = structuredClone(initialRows);
+  currentFlow = 0;
+  $("#currentFlow").value = 0;
+  $("#transferVolume").value = 0;
+  $("#transferMessage").textContent = "Ingrese el caudal actual y el volumen que desea registrar.";
+  $("#transferMessage").className = "transfer-message";
+  render();
+});
 $("#saveImage").addEventListener("click", () => window.print());
 render();
