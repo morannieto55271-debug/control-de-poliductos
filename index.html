@@ -34,8 +34,13 @@
       <section class="flow-console" aria-label="Registro de transferencia">
         <div class="flow-monitor">
           <span class="eyebrow">CAUDAL DE OPERACIÓN</span>
-          <div class="flow-reading"><strong id="flowDisplay">0,00</strong><span>BBL/H</span></div>
+          <div class="flow-reading"><strong id="flowDisplay">0</strong><span>BBL/H</span></div>
           <div class="flow-pulse"><i></i><span>Lectura ingresada por el operador</span></div>
+        </div>
+        <div class="flow-monitor accumulated-monitor">
+          <span class="eyebrow">ACUMULADO HORARIO</span>
+          <div class="flow-reading"><strong id="accumulatedDisplay">0</strong><span>BBL</span></div>
+          <div class="flow-pulse"><i></i><span>Suma de los registros horarios</span></div>
         </div>
         <div class="transfer-controls">
           <div class="console-title">
@@ -43,12 +48,18 @@
             <span class="transfer-route">Primera partida ← volumen → última partida</span>
           </div>
           <div class="control-grid">
-            <label>Caudal actual <span>BBL/H</span><input id="currentFlow" type="number" min="0" step="any" value="0" inputmode="decimal"></label>
-            <label>Volumen transferido <span>BBL</span><input id="transferVolume" type="number" min="0" step="any" value="0" inputmode="decimal"></label>
-            <button id="applyTransfer" class="button primary transfer-button" type="button">Registrar transferencia</button>
+            <label>Hora del registro <span>HORA</span><input id="flowTime" type="time" value="08:00"></label>
+            <label>Caudal de la hora <span>BBL/H</span><input id="currentFlow" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
+            <button id="applyTransfer" class="button primary transfer-button" type="button">Registrar caudal horario</button>
           </div>
-          <p id="transferMessage" class="transfer-message" aria-live="polite">Ingrese el caudal actual y el volumen que desea registrar.</p>
+          <p id="transferMessage" class="transfer-message" aria-live="polite">Seleccione la hora e ingrese el caudal correspondiente.</p>
         </div>
+      </section>
+
+      <section class="hourly-panel" aria-label="Historial de caudales horarios">
+        <div class="hourly-head"><div><span class="eyebrow">REGISTRO OPERATIVO</span><h2>Caudal ingresado por hora</h2></div><span id="recordCount">0 registros</span></div>
+        <div id="hourlyEmpty" class="hourly-empty">Todavía no se han registrado caudales horarios.</div>
+        <div id="hourlyHistory" class="hourly-history"></div>
       </section>
 
       <section class="workspace">

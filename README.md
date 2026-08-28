@@ -6,6 +6,8 @@ La pantalla de transferencia muestra el caudal actual en BBL/H y permite registr
 
 Cuando el volumen recibido completa la primera partida, esta se retira automáticamente. Cualquier volumen excedente continúa consumiendo la siguiente partida en orden.
 
+Cada caudal se registra con su hora, sin decimales. La aplicación conserva durante la sesión un historial horario y muestra la suma acumulada de todos los caudales registrados.
+
 ## Publicar en Vercel
 
 1. Descomprima el archivo del proyecto.

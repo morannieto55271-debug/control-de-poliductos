@@ -7,6 +7,7 @@ const initialRows = [
 ];
 let rows = structuredClone(initialRows);
 let currentFlow = 0;
+let flowRecords = [];
 
 const $ = (selector) => document.querySelector(selector);
 const fmt = (n, digits = 0) => new Intl.NumberFormat("es-EC", { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(n);
@@ -44,7 +45,17 @@ function render() {
   $("#totalVolume").innerHTML = `${fmt(total)} <small>u</small>`;
   $("#activeProducts").textContent = normalized.filter(row => row.remaining > 0).length;
   $("#occupancy").innerHTML = `${total > 0 ? "100" : "0"} <small>%</small>`;
-  $("#flowDisplay").textContent = fmt(currentFlow, 2);
+  $("#flowDisplay").textContent = fmt(currentFlow, 0);
+  const accumulated = flowRecords.reduce((sum, record) => sum + record.flow, 0);
+  $("#accumulatedDisplay").textContent = fmt(accumulated, 0);
+  $("#recordCount").textContent = `${flowRecords.length} registro${flowRecords.length === 1 ? "" : "s"}`;
+  $("#hourlyEmpty").hidden = flowRecords.length > 0;
+  $("#hourlyHistory").innerHTML = flowRecords.map((record, index) => `
+    <div class="hourly-record">
+      <span class="record-number">${String(index + 1).padStart(2, "0")}</span>
+      <div><strong>${record.time.replace(":", "h")} </strong><small>Registro horario</small></div>
+      <b>${fmt(record.flow, 0)} <small>BBL</small></b>
+    </div>`).join("");
   $("#emptyState").hidden = total > 0;
 
   const active = segments.filter(row => row.remaining > 0);
@@ -78,9 +89,10 @@ document.addEventListener("click", event => {
 });
 
 $("#addRow").addEventListener("click", () => { rows.push({ batch: "", product: "NUEVO PRODUCTO", sent: 0, received: 0 }); render(); });
-$("#currentFlow").addEventListener("input", event => { currentFlow = safeNumber(event.target.value); $("#flowDisplay").textContent = fmt(currentFlow, 2); });
+$("#currentFlow").addEventListener("input", event => { currentFlow = safeNumber(event.target.value); $("#flowDisplay").textContent = fmt(currentFlow, 0); });
 $("#applyTransfer").addEventListener("click", () => {
-  const volume = safeNumber($("#transferVolume").value);
+  const volume = Math.round(safeNumber($("#currentFlow").value));
+  const recordTime = $("#flowTime").value;
   const message = $("#transferMessage");
   if (!rows.length) {
     message.textContent = "Agregue al menos una partida antes de registrar la transferencia.";
@@ -88,7 +100,12 @@ $("#applyTransfer").addEventListener("click", () => {
     return;
   }
   if (volume <= 0) {
-    message.textContent = "Ingrese un volumen transferido mayor que cero.";
+    message.textContent = "Ingrese un caudal horario mayor que cero.";
+    message.className = "transfer-message";
+    return;
+  }
+  if (!recordTime) {
+    message.textContent = "Seleccione la hora correspondiente al caudal.";
     message.className = "transfer-message";
     return;
   }
@@ -122,19 +139,23 @@ $("#applyTransfer").addEventListener("click", () => {
   }
 
   const removedText = completed ? ` ${completed} partida${completed > 1 ? "s" : ""} completada${completed > 1 ? "s" : ""} y retirada${completed > 1 ? "s" : ""}.` : "";
-  message.textContent = `${fmt(volume, 2)} BBL registrados desde ${firstProduct} hacia ${lastProduct}.${removedText}`;
+  flowRecords.push({ time: recordTime, flow: volume });
+  message.textContent = `${fmt(volume, 0)} BBL registrados a las ${recordTime.replace(":", "h")} desde ${firstProduct} hacia ${lastProduct}.${removedText}`;
   message.className = "transfer-message success";
-  $("#transferVolume").value = 0;
+  $("#currentFlow").value = 0;
+  currentFlow = 0;
   render();
 });
 $("#resetData").addEventListener("click", () => {
   rows = structuredClone(initialRows);
   currentFlow = 0;
+  flowRecords = [];
   $("#currentFlow").value = 0;
-  $("#transferVolume").value = 0;
-  $("#transferMessage").textContent = "Ingrese el caudal actual y el volumen que desea registrar.";
+  $("#transferMessage").textContent = "Seleccione la hora e ingrese el caudal correspondiente.";
   $("#transferMessage").className = "transfer-message";
   render();
 });
 $("#saveImage").addEventListener("click", () => window.print());
+const now = new Date();
+$("#flowTime").value = `${String(now.getHours()).padStart(2, "0")}:00`;
 render();
