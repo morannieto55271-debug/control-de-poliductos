@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07131f" />
+    <meta name="description" content="Visualizador de empaquetamiento del Poliducto Libertad–Pascuales." />
+    <title>Control de Empaquetamiento | Libertad–Pascuales</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <div>
+          <p>CONTROL OPERATIVO</p>
+          <h1>Poliducto Libertad–Pascuales</h1>
+        </div>
+      </div>
+      <div class="status"><span></span> Cálculo activo</div>
+    </header>
+
+    <main>
+      <section class="summary" aria-label="Resumen del ducto">
+        <article><span>Longitud del ducto</span><strong>127 <small>km</small></strong></article>
+        <article><span>Volumen en ducto</span><strong id="totalVolume">0 <small>u</small></strong></article>
+        <article><span>Productos activos</span><strong id="activeProducts">0</strong></article>
+        <article><span>Ocupación calculada</span><strong id="occupancy">100 <small>%</small></strong></article>
+      </section>
+
+      <section class="workspace">
+        <article class="panel inputs-panel">
+          <div class="panel-head">
+            <div><span class="eyebrow">ENTRADAS</span><h2>Partidas y volúmenes</h2></div>
+            <button id="addRow" class="button secondary" type="button">+ Agregar</button>
+          </div>
+          <p class="hint">Actualice los datos; la posición de cada producto se recalcula automáticamente.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Partida</th><th>Producto</th><th>Envía</th><th>Recibe</th><th>En ducto</th><th></th></tr></thead>
+              <tbody id="productRows"></tbody>
+            </table>
+          </div>
+          <div class="actions">
+            <button id="resetData" class="button ghost" type="button">Restablecer ejemplo</button>
+            <button id="saveImage" class="button primary" type="button">Imprimir / guardar PDF</button>
+          </div>
+        </article>
+
+        <article class="panel pipeline-panel">
+          <div class="panel-head">
+            <div><span class="eyebrow">POSICIÓN ACTUAL</span><h2>Empaquetamiento del ducto</h2></div>
+            <span class="direction">Flujo <b>→</b> Pascuales</span>
+          </div>
+
+          <div class="terminal-labels"><span>LIBERTAD · KM 0</span><span>PASCUALES · KM 127</span></div>
+          <div class="pipe-shell">
+            <div id="pipeline" class="pipeline" role="img" aria-label="Distribución de productos en el ducto"></div>
+          </div>
+          <div class="scale" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span><span>127 km</span></div>
+          <div id="emptyState" class="empty" hidden>No hay volumen disponible para calcular la posición.</div>
+
+          <div class="segment-title"><span>DETALLE POR PRODUCTO</span><span>Inicio → Fin</span></div>
+          <div id="segmentList" class="segment-list"></div>
+        </article>
+      </section>
+    </main>
+
+    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo.</footer>
+    <script src="app.js"></script>
+  </body>
+</html>
