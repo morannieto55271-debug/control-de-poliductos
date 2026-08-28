@@ -4,6 +4,8 @@ App web estática basada en el archivo `EL MARIO(1).xlsx`. Calcula cuánto produ
 
 La pantalla de transferencia muestra el caudal actual en BBL/H y permite registrar manualmente un volumen en BBL. Cada registro suma el volumen a `RECIBE` de la primera partida y a `BOMBEADO` de la última partida.
 
+Cuando el volumen recibido completa la primera partida, esta se retira automáticamente. Cualquier volumen excedente continúa consumiendo la siguiente partida en orden.
+
 ## Publicar en Vercel
 
 1. Descomprima el archivo del proyecto.

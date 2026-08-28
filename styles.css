@@ -7,3 +7,5 @@
 @media(max-width:1040px){.flow-console{grid-template-columns:1fr}.control-grid{grid-template-columns:1fr 1fr}.transfer-button{grid-column:1/-1}}
 @media(max-width:620px){.control-grid{grid-template-columns:1fr}.transfer-button{grid-column:auto}.transfer-route{display:none}}
 @media print{.flow-console{grid-template-columns:1fr}.transfer-controls{display:none}}
+
+.company-logo{width:88px;height:48px;object-fit:contain;background:#fff;border-radius:9px;padding:5px}.brand>div{min-width:0}@media(max-width:620px){.company-logo{width:62px;height:38px}.brand{gap:9px}.brand p{font-size:8px}.brand h1{font-size:12px}}

@@ -92,9 +92,37 @@ $("#applyTransfer").addEventListener("click", () => {
     message.className = "transfer-message";
     return;
   }
-  rows[0].received = safeNumber(rows[0].received) + volume;
+  const firstProduct = rows[0].product || "la primera partida";
+  const lastProduct = rows[rows.length - 1].product || "la última partida";
+
+  // Todo el volumen transferido aumenta el bombeado de la última partida.
   rows[rows.length - 1].sent = safeNumber(rows[rows.length - 1].sent) + volume;
-  message.textContent = `${fmt(volume, 2)} BBL registrados: RECIBE de ${rows[0].product || "la primera partida"} y BOMBEADO de ${rows[rows.length - 1].product || "la última partida"}.`;
+
+  // El volumen recibido consume las partidas desde el frente. Al completarse
+  // una partida, se elimina y el excedente continúa en la siguiente.
+  let pending = volume;
+  let completed = 0;
+  while (pending > 0 && rows.length > 1) {
+    const first = rows[0];
+    const available = Math.max(0, safeNumber(first.sent) - safeNumber(first.received));
+    if (pending >= available) {
+      pending -= available;
+      rows.shift();
+      completed += 1;
+    } else {
+      first.received = safeNumber(first.received) + pending;
+      pending = 0;
+    }
+  }
+
+  // Si queda una sola partida, registra en ella cualquier volumen pendiente.
+  // Como también es la última, su bombeado y recibido crecen por igual.
+  if (pending > 0 && rows.length === 1) {
+    rows[0].received = safeNumber(rows[0].received) + pending;
+  }
+
+  const removedText = completed ? ` ${completed} partida${completed > 1 ? "s" : ""} completada${completed > 1 ? "s" : ""} y retirada${completed > 1 ? "s" : ""}.` : "";
+  message.textContent = `${fmt(volume, 2)} BBL registrados desde ${firstProduct} hacia ${lastProduct}.${removedText}`;
   message.className = "transfer-message success";
   $("#transferVolume").value = 0;
   render();
