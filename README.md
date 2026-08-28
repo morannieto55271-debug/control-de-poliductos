@@ -8,6 +8,15 @@ Cuando el volumen recibido completa la primera partida, esta se retira automáti
 
 Cada caudal se registra con su hora, sin decimales. La aplicación conserva durante la sesión un historial horario y muestra la suma acumulada de todos los caudales registrados.
 
+## Alerta de Telegram
+
+Cuando la primera partida queda entre 1 y 1.000 BBL, la aplicación envía una sola alerta preventiva. La función utiliza estas variables protegidas en Vercel:
+
+- `TELEGRAM_BOT_TOKEN`: token entregado por BotFather.
+- `TELEGRAM_CHAT_ID`: identificador del chat o grupo receptor.
+
+Estas claves deben configurarse en **Vercel → Settings → Environment Variables** y nunca deben escribirse en `app.js` ni subirse a GitHub.
+
 ## Publicar en Vercel
 
 1. Descomprima el archivo del proyecto.

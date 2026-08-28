@@ -13,6 +13,33 @@ const $ = (selector) => document.querySelector(selector);
 const fmt = (n, digits = 0) => new Intl.NumberFormat("es-EC", { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(n);
 const safeNumber = (value) => Math.max(0, Number(value) || 0);
 
+async function checkTelegramAlert(normalized) {
+  const first = normalized.find(row => row.remaining > 0);
+  if (!first || first.remaining > 1000) return;
+
+  const alertKey = `telegram-alert-${first.batch || first.product}`;
+  if (localStorage.getItem(alertKey)) return;
+
+  // Se marca antes de enviar para impedir llamadas repetidas durante el renderizado.
+  localStorage.setItem(alertKey, "pending");
+  try {
+    const response = await fetch("/api/telegram-alert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        batch: first.batch || "Sin número",
+        product: first.product || "Sin producto",
+        remaining: Math.round(first.remaining)
+      })
+    });
+    if (!response.ok) throw new Error("No se pudo enviar la alerta");
+    localStorage.setItem(alertKey, "sent");
+  } catch (error) {
+    localStorage.removeItem(alertKey);
+    console.warn("Alerta de Telegram pendiente:", error.message);
+  }
+}
+
 function calculations() {
   const normalized = rows.map((row, index) => ({ ...row, index, remaining: Math.max(0, safeNumber(row.sent) - safeNumber(row.received)) }));
   const total = normalized.reduce((sum, row) => sum + row.remaining, 0);
@@ -32,6 +59,7 @@ function input(value, field, index, type = "text") {
 
 function render() {
   const { normalized, segments, total } = calculations();
+  checkTelegramAlert(normalized);
   $("#productRows").innerHTML = normalized.map((row, index) => `
     <tr>
       <td>${input(row.batch, "batch", index)}</td>
