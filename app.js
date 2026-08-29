@@ -42,14 +42,17 @@ function renderTankModule() {
   if (!$("#tankSelect")) return;
   const calc = tankCalculation();
   const accumulated = tankRecords.reduce((sum, record) => sum + record.receivedBbl, 0);
+  const previous = calc.valid ? [...tankRecords].reverse().find(record => record.tank === calc.tank) : null;
+  const previewReceivedBbl = calc.valid && previous ? Math.max(0, calc.gallons - previous.gallons) / 42 : 0;
   $("#tankAccumulatedDisplay").innerHTML = `${fmt(accumulated, 0)} <small>BBL</small>`;
+  $("#tankReceivedDisplay").innerHTML = `${fmt(previewReceivedBbl, 0)} <small>BBL</small>`;
   $("#tankHistoryEmpty").hidden = tankRecords.length > 0;
   $("#tankHistory").innerHTML = tankRecords.map(record => `
     <tr>
       <td>${record.time.replace(":", "h")}</td>
       <td>TP-${record.tank.padStart(2, "0")}</td>
       <td>${fmt(record.levelM, 3)} m</td>
-      <td>${fmt(record.barrels, 0)} BBL</td>
+      <td>${fmt(record.gallons, 0)} GLS</td>
       <td>${fmt(record.receivedBbl, 0)} BBL</td>
       <td>${fmt(record.accumulatedBbl, 0)} BBL</td>
     </tr>`).join("");
@@ -57,14 +60,14 @@ function renderTankModule() {
   if (!calc.valid) {
     $("#tankLevelDisplay").textContent = "Fuera de rango";
     $("#tankGallonsDisplay").innerHTML = `— <small>GLS</small>`;
-    $("#tankBarrelsDisplay").innerHTML = `— <small>BBL</small>`;
+    $("#tankReceivedDisplay").innerHTML = `— <small>BBL</small>`;
     $("#tankMessage").textContent = calc.message;
     $("#tankMessage").className = "transfer-message";
     return;
   }
   $("#tankLevelDisplay").textContent = `${fmt(calc.levelM, 3)} m`;
   $("#tankGallonsDisplay").innerHTML = `${fmt(calc.gallons, 0)} <small>GLS</small>`;
-  $("#tankBarrelsDisplay").innerHTML = `${fmt(calc.barrels, 0)} <small>BBL</small>`;
+  $("#tankReceivedDisplay").innerHTML = `${fmt(previewReceivedBbl, 0)} <small>BBL</small>`;
   $("#tankMessage").textContent = calc.message;
 }
 
