@@ -46,7 +46,7 @@
             <label>Tanque<select id="tankSelect" aria-label="Seleccionar tanque"></select></label>
             <label>Acumulado inicial <span>BBL</span><input id="initialTankAccumulated" type="number" min="0" step="1" value="0"></label>
             <div class="reading-block">
-              <h3>Nivel inicial</h3>
+              <div class="reading-title"><h3>Nivel inicial</h3><button id="resetInitialLevel" class="level-reset" type="button">Reiniciar nivel inicial</button></div>
               <label>Hora inicial<input id="initialTankTime" type="time" value="08:00"></label>
               <div class="level-fields">
                 <label>Metros<input id="initialLevelMeters" type="number" min="0" step="1" value="0"></label>
@@ -55,7 +55,7 @@
               </div>
             </div>
             <div class="reading-block current-reading">
-              <h3>Nivel actual</h3>
+              <div class="reading-title"><h3>Nivel actual</h3><button id="resetCurrentLevel" class="level-reset" type="button">Reiniciar nivel actual</button></div>
               <label>Hora actual<input id="tankTime" type="time" value="09:00"></label>
               <div class="level-fields">
                 <label>Metros<input id="levelMeters" type="number" min="0" step="1" value="0"></label>
