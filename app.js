@@ -40,7 +40,7 @@ async function checkTelegramAlert(normalized){
 }
 
 function calculations(){const normalized=rows.map((r,index)=>({...r,index,remaining:Math.max(0,safeNumber(r.sent)-safeNumber(r.received))})),total=normalized.reduce((s,r)=>s+r.remaining,0);let cursor=0;const segments=[...normalized].reverse().map(r=>{const length=total?r.remaining/total*PIPE_KM:0,result={...r,start:cursor,end:cursor+length,length,percent:total?r.remaining/total*100:0};cursor+=length;return result});return{normalized,segments,total}}
-function input(value,field,index,type="text"){return`<input type="${type}" min="0" step="any" value="${String(value).replaceAll('"','&quot;')}" data-index="${index}" data-field="${field}" aria-label="${field} fila ${index+1}">`}
+function input(value,field,index,type="text"){const numeric=type==="number";return`<input type="text" ${numeric?'inputmode="decimal" data-numeric="true"':''} value="${String(value).replaceAll('"','&quot;')}" data-index="${index}" data-field="${field}" aria-label="${field} fila ${index+1}">`}
 
 function render(){
   const{normalized,segments,total}=calculations();checkTelegramAlert(normalized);
@@ -50,7 +50,7 @@ function render(){
   $("#segmentList").innerHTML=active.length?[...active].reverse().map(r=>`<div class="segment-row"><span class="dot" style="background:${COLORS[r.index%COLORS.length]}"></span><div class="segment-info"><strong>${r.product||"Sin nombre"}</strong><small>Partida ${r.batch||"—"} · ${fmt(r.percent,2)}% del ducto</small></div><div class="segment-km">${fmt(r.start,2)} → ${fmt(r.end,2)} km<small>Longitud: ${fmt(r.length,2)} km</small></div></div>`).join(""):"";renderTankModule();
 }
 
-document.addEventListener("input",e=>{const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset;rows[Number(index)][field]=el.type==="number"?safeNumber(el.value):el.value;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();if(replacement&&el.type!=="number")replacement.setSelectionRange(el.selectionStart,el.selectionStart)});
+document.addEventListener("input",e=>{const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset,position=el.selectionStart;rows[Number(index)][field]=el.value;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();replacement?.setSelectionRange(position,position)});
 document.addEventListener("click",e=>{const remove=e.target.closest("[data-remove]");if(remove){rows.splice(Number(remove.dataset.remove),1);render()}});
 $("#addRow").addEventListener("click",()=>{rows.push({batch:"",product:"NUEVO PRODUCTO",sent:0,received:0});render()});
 function resetLevelFields(prefix){["Meters","Centimeters","Millimeters"].forEach(part=>{$(`#${prefix?`${prefix}Level${part}`:`level${part}`}`).value=0});renderTankModule()}
