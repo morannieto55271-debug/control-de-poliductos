@@ -31,37 +31,6 @@
         <article><span>Ocupación calculada</span><strong id="occupancy">100 <small>%</small></strong></article>
       </section>
 
-      <section class="flow-console" aria-label="Registro de transferencia">
-        <div class="flow-monitor">
-          <span class="eyebrow">CAUDAL DE OPERACIÓN</span>
-          <div class="flow-reading"><strong id="flowDisplay">0</strong><span>BBL/H</span></div>
-          <div class="flow-pulse"><i></i><span>Lectura ingresada por el operador</span></div>
-        </div>
-        <div class="flow-monitor accumulated-monitor">
-          <span class="eyebrow">ACUMULADO HORARIO</span>
-          <div class="flow-reading"><strong id="accumulatedDisplay">0</strong><span>BBL</span></div>
-          <div class="flow-pulse"><i></i><span>Suma de los registros horarios</span></div>
-        </div>
-        <div class="transfer-controls">
-          <div class="console-title">
-            <div><span class="eyebrow">TRANSFERENCIA</span><h2>Registrar movimiento</h2></div>
-            <span class="transfer-route">Primera partida ← volumen → última partida</span>
-          </div>
-          <div class="control-grid">
-            <label>Hora del registro <span>HORA</span><input id="flowTime" type="time" value="08:00"></label>
-            <label>Caudal de la hora <span>BBL/H</span><input id="currentFlow" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
-            <button id="applyTransfer" class="button primary transfer-button" type="button">Registrar caudal horario</button>
-          </div>
-          <p id="transferMessage" class="transfer-message" aria-live="polite">Seleccione la hora e ingrese el caudal correspondiente.</p>
-        </div>
-      </section>
-
-      <section class="hourly-panel" aria-label="Historial de caudales horarios">
-        <div class="hourly-head"><div><span class="eyebrow">REGISTRO OPERATIVO</span><h2>Caudal ingresado por hora</h2></div><span id="recordCount">0 registros</span></div>
-        <div id="hourlyEmpty" class="hourly-empty">Todavía no se han registrado caudales horarios.</div>
-        <div id="hourlyHistory" class="hourly-history"></div>
-      </section>
-
       <section class="tank-module" aria-label="Cálculo de volumen por nivel de tanque">
         <div class="tank-module-head">
           <div><span class="eyebrow">AFORO DE TANQUES</span><h2>Recepción calculada por nivel</h2></div>
@@ -70,7 +39,8 @@
         <div class="tank-layout">
           <div class="tank-controls">
             <label>Tanque<select id="tankSelect" aria-label="Seleccionar tanque"></select></label>
-            <label>Hora<input id="tankTime" type="time" value="08:00"></label>
+            <label>Hora de lectura / inicio<input id="tankTime" type="time" value="08:00"></label>
+            <label>Acumulado inicial <span>BBL</span><input id="initialTankAccumulated" type="number" min="0" step="1" value="0"></label>
             <div class="level-fields">
               <label>Metros<input id="levelMeters" type="number" min="0" step="1" value="0"></label>
               <label>Centímetros<input id="levelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
@@ -83,13 +53,14 @@
             <article><span>Nivel interpretado</span><strong id="tankLevelDisplay">0,000 m</strong></article>
             <article><span>Volumen calculado</span><strong id="tankGallonsDisplay">0 <small>GLS</small></strong></article>
             <article><span>Recibido desde lectura anterior</span><strong id="tankReceivedDisplay">0 <small>BBL</small></strong></article>
+            <article><span>Caudal calculado</span><strong id="tankFlowDisplay">0 <small>BBL/H</small></strong></article>
             <article class="tank-accent"><span>Acumulado recibido</span><strong id="tankAccumulatedDisplay">0 <small>BBL</small></strong></article>
           </div>
         </div>
         <div id="tankHistoryEmpty" class="hourly-empty">Todavía no se han registrado niveles de tanques.</div>
         <div class="tank-history-wrap">
           <table class="tank-history-table">
-            <thead><tr><th>Hora</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Acumulado BBL</th></tr></thead>
+            <thead><tr><th>Hora</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th></tr></thead>
             <tbody id="tankHistory"></tbody>
           </table>
         </div>
@@ -104,7 +75,7 @@
           <p class="hint">Actualice los datos; la posición de cada producto se recalcula automáticamente.</p>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Partida</th><th>Producto</th><th>Bombeado (BBL)</th><th>Recibe (BBL)</th><th>En ducto</th><th></th></tr></thead>
+              <thead><tr><th>Partida</th><th>Producto</th><th>Bombeado (BBL)</th><th>Recibido (BBL)</th><th>Saldo: bombeado − recibido</th><th></th></tr></thead>
               <tbody id="productRows"></tbody>
             </table>
           </div>

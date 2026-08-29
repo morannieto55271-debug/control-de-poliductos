@@ -2,11 +2,11 @@
 
 App web estática basada en el archivo `EL MARIO(1).xlsx`. Calcula cuánto producto permanece en el ducto y representa su ubicación proporcional a lo largo de 127 km.
 
-La pantalla de transferencia muestra el caudal actual en BBL/H y permite registrar manualmente un volumen en BBL. Cada registro suma el volumen a `RECIBE` de la primera partida y a `BOMBEADO` de la última partida.
+La recepción se obtiene automáticamente al comparar dos lecturas del tanque. El volumen calculado suma a `RECIBIDO` de la primera partida y a `BOMBEADO` de la última partida.
 
 Cuando el volumen recibido completa la primera partida, esta se retira automáticamente. Cualquier volumen excedente continúa consumiendo la siguiente partida en orden.
 
-Cada caudal se registra con su hora, sin decimales. La aplicación conserva durante la sesión un historial horario y muestra la suma acumulada de todos los caudales registrados.
+El caudal se calcula en BBL/H según el volumen recibido y el tiempo transcurrido. La hora avanza automáticamente una hora después de registrar, pero el operador puede modificarla. El acumulado puede iniciar en cero o en un valor manual.
 
 ## Aforo de tanques
 
@@ -33,8 +33,8 @@ También puede probarla localmente abriendo `index.html` en un navegador.
 
 ## Cálculo
 
-- En ducto = Enviado − Recibido (sin permitir valores negativos).
-- Porcentaje = En ducto del producto ÷ volumen total en ducto.
+- Saldo en ducto = Bombeado − Recibido (sin permitir valores negativos).
+- Porcentaje = Saldo en ducto del producto ÷ volumen total en ducto.
 - Longitud = Porcentaje × 127 km.
 - Los productos se ubican en el orden de las partidas: la primera fila queda más próxima a Pascuales.
 
