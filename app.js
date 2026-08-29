@@ -8,10 +8,65 @@ const initialRows = [
 let rows = structuredClone(initialRows);
 let currentFlow = 0;
 let flowRecords = [];
+let tankRecords = [];
 
 const $ = (selector) => document.querySelector(selector);
 const fmt = (n, digits = 0) => new Intl.NumberFormat("es-EC", { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(n);
 const safeNumber = (value) => Math.max(0, Number(value) || 0);
+
+function tankCalculation() {
+  const tank = $("#tankSelect")?.value;
+  const calibration = window.TANK_CALIBRATION?.[tank];
+  if (!calibration) return { valid: false, message: "Seleccione un tanque disponible." };
+
+  const meters = Math.floor(safeNumber($("#levelMeters")?.value));
+  const centimeters = Math.min(99, Math.floor(safeNumber($("#levelCentimeters")?.value)));
+  const millimeters = Math.min(9, Math.floor(safeNumber($("#levelMillimeters")?.value)));
+  const wholeCentimeters = meters * 100 + centimeters;
+  if (wholeCentimeters > calibration.maxCm) {
+    return { valid: false, tank, meters, centimeters, millimeters, message: `El nivel supera el máximo operativo de ${fmt(calibration.maxCm / 100, 2)} m para el TP-${tank}.` };
+  }
+
+  const gallons = calibration.volumes[wholeCentimeters] + calibration.mmCorrections[millimeters];
+  return {
+    valid: Number.isFinite(gallons), tank, meters, centimeters, millimeters,
+    levelMm: wholeCentimeters * 10 + millimeters,
+    levelM: wholeCentimeters / 100 + millimeters / 1000,
+    gallons,
+    barrels: gallons / 42,
+    message: "Lectura dentro del rango de la tabla de aforo."
+  };
+}
+
+function renderTankModule() {
+  if (!$("#tankSelect")) return;
+  const calc = tankCalculation();
+  const accumulated = tankRecords.reduce((sum, record) => sum + record.receivedBbl, 0);
+  $("#tankAccumulatedDisplay").innerHTML = `${fmt(accumulated, 0)} <small>BBL</small>`;
+  $("#tankHistoryEmpty").hidden = tankRecords.length > 0;
+  $("#tankHistory").innerHTML = tankRecords.map(record => `
+    <tr>
+      <td>${record.time.replace(":", "h")}</td>
+      <td>TP-${record.tank.padStart(2, "0")}</td>
+      <td>${fmt(record.levelM, 3)} m</td>
+      <td>${fmt(record.barrels, 0)} BBL</td>
+      <td>${fmt(record.receivedBbl, 0)} BBL</td>
+      <td>${fmt(record.accumulatedBbl, 0)} BBL</td>
+    </tr>`).join("");
+
+  if (!calc.valid) {
+    $("#tankLevelDisplay").textContent = "Fuera de rango";
+    $("#tankGallonsDisplay").innerHTML = `— <small>GLS</small>`;
+    $("#tankBarrelsDisplay").innerHTML = `— <small>BBL</small>`;
+    $("#tankMessage").textContent = calc.message;
+    $("#tankMessage").className = "transfer-message";
+    return;
+  }
+  $("#tankLevelDisplay").textContent = `${fmt(calc.levelM, 3)} m`;
+  $("#tankGallonsDisplay").innerHTML = `${fmt(calc.gallons, 0)} <small>GLS</small>`;
+  $("#tankBarrelsDisplay").innerHTML = `${fmt(calc.barrels, 0)} <small>BBL</small>`;
+  $("#tankMessage").textContent = calc.message;
+}
 
 async function checkTelegramAlert(normalized) {
   const first = normalized.find(row => row.remaining > 0);
@@ -98,6 +153,7 @@ function render() {
       <div class="segment-info"><strong>${row.product || "Sin nombre"}</strong><small>Partida ${row.batch || "—"} · ${fmt(row.percent, 2)}% del ducto</small></div>
       <div class="segment-km">${fmt(row.start, 2)} → ${fmt(row.end, 2)} km<small>Longitud: ${fmt(row.length, 2)} km</small></div>
     </div>`).join("") : "";
+  renderTankModule();
 }
 
 document.addEventListener("input", event => {
@@ -118,6 +174,36 @@ document.addEventListener("click", event => {
 
 $("#addRow").addEventListener("click", () => { rows.push({ batch: "", product: "NUEVO PRODUCTO", sent: 0, received: 0 }); render(); });
 $("#currentFlow").addEventListener("input", event => { currentFlow = safeNumber(event.target.value); $("#flowDisplay").textContent = fmt(currentFlow, 0); });
+["#tankSelect", "#levelMeters", "#levelCentimeters", "#levelMillimeters"].forEach(selector => {
+  $(selector).addEventListener("input", renderTankModule);
+});
+$("#registerTankLevel").addEventListener("click", () => {
+  const calc = tankCalculation();
+  const message = $("#tankMessage");
+  const time = $("#tankTime").value;
+  if (!calc.valid) {
+    message.textContent = calc.message;
+    message.className = "transfer-message";
+    return;
+  }
+  if (!time) {
+    message.textContent = "Seleccione la hora de la lectura.";
+    message.className = "transfer-message";
+    return;
+  }
+  const previous = [...tankRecords].reverse().find(record => record.tank === calc.tank);
+  const receivedBbl = previous ? Math.max(0, calc.gallons - previous.gallons) / 42 : 0;
+  const accumulatedBbl = tankRecords.reduce((sum, record) => sum + record.receivedBbl, 0) + receivedBbl;
+  tankRecords.push({
+    time, tank: calc.tank, levelM: calc.levelM, gallons: calc.gallons,
+    barrels: calc.barrels, receivedBbl, accumulatedBbl
+  });
+  message.textContent = previous
+    ? `Lectura registrada. Recibido desde la lectura anterior: ${fmt(receivedBbl, 0)} BBL.`
+    : "Lectura inicial registrada como referencia; el recibido comienza en la siguiente lectura.";
+  message.className = "transfer-message success";
+  renderTankModule();
+});
 $("#applyTransfer").addEventListener("click", () => {
   const volume = Math.round(safeNumber($("#currentFlow").value));
   const recordTime = $("#flowTime").value;
@@ -178,6 +264,7 @@ $("#resetData").addEventListener("click", () => {
   rows = structuredClone(initialRows);
   currentFlow = 0;
   flowRecords = [];
+  tankRecords = [];
   $("#currentFlow").value = 0;
   $("#transferMessage").textContent = "Seleccione la hora e ingrese el caudal correspondiente.";
   $("#transferMessage").className = "transfer-message";
@@ -186,4 +273,6 @@ $("#resetData").addEventListener("click", () => {
 $("#saveImage").addEventListener("click", () => window.print());
 const now = new Date();
 $("#flowTime").value = `${String(now.getHours()).padStart(2, "0")}:00`;
+$("#tankTime").value = `${String(now.getHours()).padStart(2, "0")}:00`;
+$("#tankSelect").innerHTML = Object.keys(window.TANK_CALIBRATION || {}).map(tank => `<option value="${tank}">TP-${tank.padStart(2, "0")}</option>`).join("");
 render();

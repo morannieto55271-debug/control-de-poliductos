@@ -62,6 +62,39 @@
         <div id="hourlyHistory" class="hourly-history"></div>
       </section>
 
+      <section class="tank-module" aria-label="Cálculo de volumen por nivel de tanque">
+        <div class="tank-module-head">
+          <div><span class="eyebrow">AFORO DE TANQUES</span><h2>Recepción calculada por nivel</h2></div>
+          <span class="tank-source">Tablas de calibración · Reductora Pascuales</span>
+        </div>
+        <div class="tank-layout">
+          <div class="tank-controls">
+            <label>Tanque<select id="tankSelect" aria-label="Seleccionar tanque"></select></label>
+            <label>Hora<input id="tankTime" type="time" value="08:00"></label>
+            <div class="level-fields">
+              <label>Metros<input id="levelMeters" type="number" min="0" step="1" value="0"></label>
+              <label>Centímetros<input id="levelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
+              <label>Milímetros<input id="levelMillimeters" type="number" min="0" max="9" step="1" value="0"></label>
+            </div>
+            <button id="registerTankLevel" class="button primary" type="button">Registrar lectura del tanque</button>
+            <p id="tankMessage" class="transfer-message" aria-live="polite">Seleccione el tanque e ingrese el nivel observado.</p>
+          </div>
+          <div class="tank-results">
+            <article><span>Nivel interpretado</span><strong id="tankLevelDisplay">0,000 m</strong></article>
+            <article><span>Volumen calculado</span><strong id="tankGallonsDisplay">0 <small>GLS</small></strong></article>
+            <article><span>Volumen calculado</span><strong id="tankBarrelsDisplay">0 <small>BBL</small></strong></article>
+            <article class="tank-accent"><span>Acumulado recibido</span><strong id="tankAccumulatedDisplay">0 <small>BBL</small></strong></article>
+          </div>
+        </div>
+        <div id="tankHistoryEmpty" class="hourly-empty">Todavía no se han registrado niveles de tanques.</div>
+        <div class="tank-history-wrap">
+          <table class="tank-history-table">
+            <thead><tr><th>Hora</th><th>Tanque</th><th>Nivel</th><th>Volumen</th><th>Recibido</th><th>Acumulado</th></tr></thead>
+            <tbody id="tankHistory"></tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="workspace">
         <article class="panel inputs-panel">
           <div class="panel-head">
@@ -101,6 +134,7 @@
     </main>
 
     <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo.</footer>
+    <script src="tank-data.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

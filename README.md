@@ -8,6 +8,10 @@ Cuando el volumen recibido completa la primera partida, esta se retira automáti
 
 Cada caudal se registra con su hora, sin decimales. La aplicación conserva durante la sesión un historial horario y muestra la suma acumulada de todos los caudales registrados.
 
+## Aforo de tanques
+
+El módulo de tanques utiliza las tablas de calibración de `CONDICIONES POLIDUCTOS (version 3).xlsx` para los TP-09, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 28 y 29. El operador selecciona tanque, hora y nivel en metros, centímetros y milímetros. La app calcula galones y barriles; desde la segunda lectura del mismo tanque obtiene el incremento recibido y lo suma al acumulado.
+
 ## Alerta de Telegram
 
 Cuando la primera partida queda entre 1 y 1.000 BBL, la aplicación envía una sola alerta preventiva. La función utiliza estas variables protegidas en Vercel:
