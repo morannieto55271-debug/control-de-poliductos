@@ -44,15 +44,27 @@
         <div class="tank-layout">
           <div class="tank-controls">
             <label>Tanque<select id="tankSelect" aria-label="Seleccionar tanque"></select></label>
-            <label>Hora de lectura / inicio<input id="tankTime" type="time" value="08:00"></label>
             <label>Acumulado inicial <span>BBL</span><input id="initialTankAccumulated" type="number" min="0" step="1" value="0"></label>
-            <div class="level-fields">
-              <label>Metros<input id="levelMeters" type="number" min="0" step="1" value="0"></label>
-              <label>Centímetros<input id="levelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
-              <label>Milímetros<input id="levelMillimeters" type="number" min="0" max="9" step="1" value="0"></label>
+            <div class="reading-block">
+              <h3>Nivel inicial</h3>
+              <label>Hora inicial<input id="initialTankTime" type="time" value="08:00"></label>
+              <div class="level-fields">
+                <label>Metros<input id="initialLevelMeters" type="number" min="0" step="1" value="0"></label>
+                <label>Centímetros<input id="initialLevelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
+                <label>Milímetros<input id="initialLevelMillimeters" type="number" min="0" max="9" step="1" value="0"></label>
+              </div>
+            </div>
+            <div class="reading-block current-reading">
+              <h3>Nivel actual</h3>
+              <label>Hora actual<input id="tankTime" type="time" value="09:00"></label>
+              <div class="level-fields">
+                <label>Metros<input id="levelMeters" type="number" min="0" step="1" value="0"></label>
+                <label>Centímetros<input id="levelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
+                <label>Milímetros<input id="levelMillimeters" type="number" min="0" max="9" step="1" value="0"></label>
+              </div>
             </div>
             <button id="registerTankLevel" class="button primary" type="button">Registrar lectura del tanque</button>
-            <p id="tankMessage" class="transfer-message" aria-live="polite">Seleccione el tanque e ingrese el nivel observado.</p>
+            <p id="tankMessage" class="transfer-message" aria-live="polite">Ingrese el nivel inicial y el nivel actual para calcular el primer caudal.</p>
           </div>
           <div class="tank-results">
             <article><span>Nivel interpretado</span><strong id="tankLevelDisplay">0,000 m</strong></article>

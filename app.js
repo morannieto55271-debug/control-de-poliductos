@@ -14,10 +14,10 @@ function applyTransferredVolume(volume){
   return completed;
 }
 
-function tankCalculation(){
+function tankCalculation(prefix=""){
   const tank=$("#tankSelect")?.value,c=window.TANK_CALIBRATION?.[tank];
   if(!c)return{valid:false,message:"Seleccione un tanque disponible."};
-  const meters=Math.floor(safeNumber($("#levelMeters")?.value)),centimeters=Math.min(99,Math.floor(safeNumber($("#levelCentimeters")?.value))),millimeters=Math.min(9,Math.floor(safeNumber($("#levelMillimeters")?.value))),cm=meters*100+centimeters;
+  const id=part=>`#${prefix?`${prefix}Level${part}`:`level${part}`}`,meters=Math.floor(safeNumber($(id("Meters"))?.value)),centimeters=Math.min(99,Math.floor(safeNumber($(id("Centimeters"))?.value))),millimeters=Math.min(9,Math.floor(safeNumber($(id("Millimeters"))?.value))),cm=meters*100+centimeters;
   if(cm>c.maxCm)return{valid:false,message:`El nivel supera el máximo operativo de ${fmt(c.maxCm/100,2)} m para el TP-${tank}.`};
   const gallons=c.volumes[cm]+c.mmCorrections[millimeters];
   return{valid:Number.isFinite(gallons),tank,levelM:cm/100+millimeters/1000,gallons,barrels:gallons/42,message:"Lectura dentro del rango de la tabla de aforo."};
@@ -25,7 +25,7 @@ function tankCalculation(){
 
 function renderTankModule(){
   if(!$("#tankSelect"))return;
-  const calc=tankCalculation(),initial=safeNumber($("#initialTankAccumulated")?.value),accumulated=initial+tankRecords.reduce((s,r)=>s+r.receivedBbl,0),previous=calc.valid?[...tankRecords].reverse().find(r=>r.tank===calc.tank):null,last=tankRecords.at(-1),received=calc.valid&&previous?Math.round(Math.max(0,calc.gallons-previous.gallons)/42):0,hours=previous&&$("#tankTime")?.value?elapsedHours(previous.time,$("#tankTime").value):0,flow=hours?Math.round(received/hours):0,shownReceived=received>0?received:(last?.receivedBbl||0);
+  const calc=tankCalculation(),base=tankCalculation("initial"),initial=safeNumber($("#initialTankAccumulated")?.value),accumulated=initial+tankRecords.reduce((s,r)=>s+r.receivedBbl,0),last=tankRecords.at(-1),received=calc.valid&&base.valid?Math.round(Math.max(0,calc.gallons-base.gallons)/42):0,hours=$("#initialTankTime")?.value&&$("#tankTime")?.value?elapsedHours($("#initialTankTime").value,$("#tankTime").value):0,flow=hours?Math.round(received/hours):0,shownReceived=received>0?received:(last?.receivedBbl||0);
   $("#tankAccumulatedDisplay").innerHTML=`${fmt(accumulated)} <small>BBL</small>`;$("#tankReceivedDisplay").innerHTML=`${fmt(shownReceived)} <small>BBL</small>`;$("#tankFlowDisplay").innerHTML=`${fmt(flow)} <small>BBL/H</small>`;$("#currentCalculatedFlow").innerHTML=`${fmt(last?.flowBph||0)} <small>BBL/H</small>`;$("#tankHistoryEmpty").hidden=tankRecords.length>0;
   let running=initial;
   $("#tankHistory").innerHTML=tankRecords.map(r=>{running+=r.receivedBbl;return`<tr><td>${r.time.replace(":","h")}</td><td>TP-${r.tank.padStart(2,"0")}</td><td>${fmt(r.levelM,3)} m</td><td>${fmt(r.gallons)} GLS</td><td>${fmt(r.receivedBbl)} BBL</td><td>${fmt(r.flowBph)} BBL/H</td><td>${fmt(running)} BBL</td></tr>`}).join("");
@@ -53,13 +53,14 @@ function render(){
 document.addEventListener("input",e=>{const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset;rows[Number(index)][field]=el.type==="number"?safeNumber(el.value):el.value;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();if(replacement&&el.type!=="number")replacement.setSelectionRange(el.selectionStart,el.selectionStart)});
 document.addEventListener("click",e=>{const remove=e.target.closest("[data-remove]");if(remove){rows.splice(Number(remove.dataset.remove),1);render()}});
 $("#addRow").addEventListener("click",()=>{rows.push({batch:"",product:"NUEVO PRODUCTO",sent:0,received:0});render()});
-["#tankSelect","#levelMeters","#levelCentimeters","#levelMillimeters","#tankTime","#initialTankAccumulated"].forEach(s=>$(s).addEventListener("input",renderTankModule));
+["#tankSelect","#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters","#initialTankTime","#tankTime","#initialTankAccumulated"].forEach(s=>$(s).addEventListener("input",renderTankModule));
 $("#registerTankLevel").addEventListener("click",()=>{
-  const calc=tankCalculation(),message=$("#tankMessage"),time=$("#tankTime").value;if(!calc.valid||!time){message.textContent=calc.valid?"Seleccione la hora de la lectura.":calc.message;message.className="transfer-message";return}
-  const previous=[...tankRecords].reverse().find(r=>r.tank===calc.tank),receivedBbl=previous?Math.round(Math.max(0,calc.gallons-previous.gallons)/42):0,hours=previous?elapsedHours(previous.time,time):0,flowBph=hours?Math.round(receivedBbl/hours):0,completed=applyTransferredVolume(receivedBbl);
+  const calc=tankCalculation(),base=tankCalculation("initial"),message=$("#tankMessage"),initialTime=$("#initialTankTime").value,time=$("#tankTime").value;if(!calc.valid||!base.valid||!initialTime||!time){message.textContent=!base.valid?`Nivel inicial: ${base.message}`:!calc.valid?`Nivel actual: ${calc.message}`:"Seleccione la hora inicial y la hora actual.";message.className="transfer-message";return}
+  const receivedBbl=Math.round(Math.max(0,calc.gallons-base.gallons)/42),hours=elapsedHours(initialTime,time),flowBph=hours?Math.round(receivedBbl/hours):0,completed=applyTransferredVolume(receivedBbl);
   tankRecords.push({time,tank:calc.tank,levelM:calc.levelM,gallons:calc.gallons,barrels:calc.barrels,receivedBbl,flowBph,elapsedHours:hours});const removed=completed?` ${completed} partida${completed>1?"s":""} completada${completed>1?"s":""} y retirada${completed>1?"s":""}.`:"";
-  const confirmation=previous?`Lectura registrada: ${fmt(receivedBbl)} BBL recibidos en ${fmt(hours,2)} h; caudal calculado ${fmt(flowBph)} BBL/H.${removed}`:"Lectura inicial registrada como referencia; el recibido comienza en la siguiente lectura.";$("#tankTime").value=addOneHour(time);render();message.textContent=confirmation;message.className="transfer-message success";
+  const confirmation=`Lectura registrada: ${fmt(receivedBbl)} BBL recibidos en ${fmt(hours,2)} h; caudal calculado ${fmt(flowBph)} BBL/H y sumado al acumulado.${removed}`;
+  $("#initialTankTime").value=time;$("#tankTime").value=addOneHour(time);["Meters","Centimeters","Millimeters"].forEach(part=>{$(`#initialLevel${part}`).value=$(`#level${part}`).value});render();message.textContent=confirmation;message.className="transfer-message success";
 });
-$("#resetData").addEventListener("click",()=>{rows=structuredClone(initialRows);tankRecords=[];$("#initialTankAccumulated").value=0;$("#tankMessage").textContent="Ingrese el nivel del tanque para calcular el volumen.";$("#tankMessage").className="transfer-message";render()});
+$("#resetData").addEventListener("click",()=>{rows=structuredClone(initialRows);tankRecords=[];$("#initialTankAccumulated").value=0;["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);$("#tankMessage").textContent="Ingrese el nivel inicial y el nivel actual para calcular el primer caudal.";$("#tankMessage").className="transfer-message";render()});
 $("#saveImage").addEventListener("click",()=>window.print());
-const now=new Date();$("#tankTime").value=`${String(now.getHours()).padStart(2,"0")}:00`;$("#tankSelect").innerHTML=Object.keys(window.TANK_CALIBRATION||{}).map(t=>`<option value="${t}">TP-${t.padStart(2,"0")}</option>`).join("");render();
+const now=new Date(),start=`${String(now.getHours()).padStart(2,"0")}:00`;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#tankSelect").innerHTML=Object.keys(window.TANK_CALIBRATION||{}).map(t=>`<option value="${t}">TP-${t.padStart(2,"0")}</option>`).join("");render();
