@@ -36,14 +36,32 @@
         <strong id="currentCalculatedFlow">0 <small>BBL/H</small></strong>
       </section>
 
+      <section class="operation-forecast" aria-label="Estimación de la primera partida">
+        <div class="forecast-panel">
+          <div class="forecast-head"><div><span class="eyebrow">PRIMERA PARTIDA</span><h2>Tiempo adicional estimado</h2></div><button id="resetForecast" class="level-reset" type="button">Reiniciar cálculo</button></div>
+          <p id="firstBatchName" class="forecast-batch">Primera partida</p>
+          <div class="forecast-grid">
+            <label>Falta recibir <span>BBL</span><input id="firstBatchRemainingInput" type="number" min="0" step="1" value="0"></label>
+            <label>Caudal para cálculo <span>BBL/H</span><input id="forecastFlowInput" type="number" min="0" step="1" value="0"></label>
+            <label>Tiempo adicional <span>horas</span><input id="forecastHoursInput" type="number" min="0" step="0.01" value="0"></label>
+          </div>
+          <div class="forecast-results">
+            <div class="forecast-result"><span>Tiempo restante aproximado</span><strong id="forecastTimeDisplay">0 h 00 min</strong></div>
+            <div class="forecast-result finish-result"><span>Hora estimada de finalización</span><strong id="forecastFinishDisplay">—</strong></div>
+          </div>
+          <p class="forecast-formula">Faltante ÷ caudal = tiempo adicional. Puedes editar cualquiera de los tres valores.</p>
+        </div>
+      </section>
+
       <section class="tank-module" aria-label="Cálculo de volumen por nivel de tanque">
         <div class="tank-module-head">
           <div><span class="eyebrow">AFORO DE TANQUES</span><h2>Recepción calculada por nivel</h2></div>
-          <span class="tank-source">Tablas de calibración · Reductora Pascuales</span>
+          <button id="resetTankOperation" class="level-reset" type="button">Borrar acumulado y niveles</button>
         </div>
         <div class="tank-layout">
           <div class="tank-controls">
             <label>Tanque<select id="tankSelect" aria-label="Seleccionar tanque"></select></label>
+            <label>Partida equivalente<input id="batchEquivalentInput" type="text" placeholder="Ej.: 340 o 506-B"></label>
             <label>Acumulado inicial <span>BBL</span><input id="initialTankAccumulated" type="number" min="0" step="1" value="0"></label>
             <div class="reading-block">
               <div class="reading-title"><h3>Nivel inicial</h3><button id="resetInitialLevel" class="level-reset" type="button">Reiniciar nivel inicial</button></div>
@@ -77,7 +95,7 @@
         <div id="tankHistoryEmpty" class="hourly-empty">Todavía no se han registrado niveles de tanques.</div>
         <div class="tank-history-wrap">
           <table class="tank-history-table">
-            <thead><tr><th>Hora</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th></tr></thead>
+            <thead><tr><th>Hora</th><th>Partida equivalente</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th></tr></thead>
             <tbody id="tankHistory"></tbody>
           </table>
         </div>
