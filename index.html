@@ -31,11 +31,6 @@
         <article><span>Ocupación calculada</span><strong id="occupancy">100 <small>%</small></strong></article>
       </section>
 
-      <section class="current-flow-panel" aria-label="Caudal actual">
-        <div><span class="eyebrow">CAUDAL ACTUAL</span><p>Calculado con las dos últimas lecturas registradas</p></div>
-        <strong id="currentCalculatedFlow">0 <small>BBL/H</small></strong>
-      </section>
-
       <section class="tank-module" aria-label="Cálculo de volumen por nivel de tanque">
         <div class="tank-module-head">
           <div><span class="eyebrow">AFORO DE TANQUES</span><h2>Recepción calculada por nivel</h2></div>
@@ -44,33 +39,21 @@
         <div class="tank-layout">
           <div class="tank-controls">
             <label>Tanque<select id="tankSelect" aria-label="Seleccionar tanque"></select></label>
+            <label>Hora de lectura / inicio<input id="tankTime" type="time" value="08:00"></label>
             <label>Acumulado inicial <span>BBL</span><input id="initialTankAccumulated" type="number" min="0" step="1" value="0"></label>
-            <div class="reading-block">
-              <div class="reading-title"><h3>Nivel inicial</h3><button id="resetInitialLevel" class="level-reset" type="button">Reiniciar nivel inicial</button></div>
-              <label>Hora inicial<input id="initialTankTime" type="time" value="08:00"></label>
-              <div class="level-fields">
-                <label>Metros<input id="initialLevelMeters" type="number" min="0" step="1" value="0"></label>
-                <label>Centímetros<input id="initialLevelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
-                <label>Milímetros<input id="initialLevelMillimeters" type="number" min="0" max="9" step="1" value="0"></label>
-              </div>
-            </div>
-            <div class="reading-block current-reading">
-              <div class="reading-title"><h3>Nivel actual</h3><button id="resetCurrentLevel" class="level-reset" type="button">Reiniciar nivel actual</button></div>
-              <label>Hora actual<input id="tankTime" type="time" value="09:00"></label>
-              <div class="level-fields">
-                <label>Metros<input id="levelMeters" type="number" min="0" step="1" value="0"></label>
-                <label>Centímetros<input id="levelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
-                <label>Milímetros<input id="levelMillimeters" type="number" min="0" max="9" step="1" value="0"></label>
-              </div>
+            <div class="level-fields">
+              <label>Metros<input id="levelMeters" type="number" min="0" step="1" value="0"></label>
+              <label>Centímetros<input id="levelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
+              <label>Milímetros<input id="levelMillimeters" type="number" min="0" max="9" step="1" value="0"></label>
             </div>
             <button id="registerTankLevel" class="button primary" type="button">Registrar lectura del tanque</button>
-            <p id="tankMessage" class="transfer-message" aria-live="polite">Ingrese el nivel inicial y el nivel actual para calcular el primer caudal.</p>
+            <p id="tankMessage" class="transfer-message" aria-live="polite">Seleccione el tanque e ingrese el nivel observado.</p>
           </div>
           <div class="tank-results">
             <article><span>Nivel interpretado</span><strong id="tankLevelDisplay">0,000 m</strong></article>
             <article><span>Volumen calculado</span><strong id="tankGallonsDisplay">0 <small>GLS</small></strong></article>
-            <article><span>Último recibido registrado</span><strong id="tankReceivedDisplay">0 <small>BBL</small></strong></article>
-            <article><span>Caudal calculado para registrar</span><strong id="tankFlowDisplay">0 <small>BBL/H</small></strong></article>
+            <article><span>Recibido desde lectura anterior</span><strong id="tankReceivedDisplay">0 <small>BBL</small></strong></article>
+            <article><span>Caudal calculado</span><strong id="tankFlowDisplay">0 <small>BBL/H</small></strong></article>
             <article class="tank-accent"><span>Acumulado recibido</span><strong id="tankAccumulatedDisplay">0 <small>BBL</small></strong></article>
           </div>
         </div>
