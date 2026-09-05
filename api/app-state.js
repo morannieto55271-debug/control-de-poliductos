@@ -1,8 +1,10 @@
-const headers = key => ({
-  apikey: key,
-  Authorization: `Bearer ${key}`,
-  "Content-Type": "application/json"
-});
+const headers = key => {
+  const result = { apikey: key, "Content-Type": "application/json" };
+  if (!key.startsWith("sb_secret_") && !key.startsWith("sb_publishable_")) {
+    result.Authorization = `Bearer ${key}`;
+  }
+  return result;
+};
 
 module.exports = async function handler(request, response) {
   const url = process.env.SUPABASE_URL;
