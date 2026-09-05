@@ -8,7 +8,7 @@ Cuando el volumen recibido completa la primera partida, esta se retira automáti
 
 El caudal se calcula en BBL/H según el volumen recibido y el tiempo transcurrido. La hora avanza automáticamente una hora después de registrar, pero el operador puede modificarla. El acumulado puede iniciar en cero o en un valor manual.
 
-La estimación operativa toma el saldo de la primera partida y lo divide para el último caudal registrado. Muestra el faltante en BBL, el tiempo adicional en horas y minutos y la hora estimada de finalización. El caudal se obtiene automáticamente con las tablas de aforo, pero puede corregirse manualmente. El panel incluye un botón para reiniciar el cálculo.
+La estimación operativa toma el saldo de la primera partida y lo divide para el último caudal registrado. Muestra el faltante en BBL y el tiempo adicional en horas y minutos. El caudal se obtiene automáticamente con las tablas de aforo, pero puede corregirse manualmente. El botón `Fin de partida` pone en cero el acumulado y los niveles para comenzar la siguiente partida sin borrar el histórico.
 
 ## Aforo de tanques
 
@@ -17,6 +17,8 @@ El módulo de tanques utiliza las tablas de calibración de `CONDICIONES POLIDUC
 ## Alerta de Telegram
 
 Cuando la primera partida queda entre 1 y 1.000 BBL, la aplicación envía una sola alerta preventiva. La función utiliza estas variables protegidas en Vercel:
+
+Además, cada vez que se registra una lectura de nivel, publica en el mismo chat el caudal calculado como **Caudal Poliducto Libertad**, junto con la hora, partida y tanque.
 
 - `TELEGRAM_BOT_TOKEN`: token entregado por BotFather.
 - `TELEGRAM_CHAT_ID`: identificador del chat o grupo receptor.

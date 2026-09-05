@@ -5,7 +5,6 @@ const $=s=>document.querySelector(s),safeNumber=v=>Math.max(0,Number(v)||0),fmt=
 
 function elapsedHours(a,b){const m=v=>{const[h,x]=v.split(":").map(Number);return h*60+x};let d=m(b)-m(a);if(d<=0)d+=1440;return d/60}
 function addOneHour(t){const[h,m]=t.split(":").map(Number);return`${String((h+1)%24).padStart(2,"0")}:${String(m).padStart(2,"0")}`}
-function finishTime(time,hours){if(!time||!Number.isFinite(hours))return"—";const[h,m]=time.split(":").map(Number),start=h*60+m,total=start+Math.round(hours*60),days=Math.floor(total/1440),clock=total%1440;return`${String(Math.floor(clock/60)).padStart(2,"0")}:${String(clock%60).padStart(2,"0")}${days?` (+${days} día${days>1?"s":""})`:""}`}
 function applyTransferredVolume(volume){
   if(volume<=0||!rows.length)return 0;
   rows.at(-1).sent=safeNumber(rows.at(-1).sent)+volume;
@@ -39,6 +38,13 @@ async function checkTelegramAlert(normalized){
   try{const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({batch:first.batch||"Sin número",product:first.product||"Sin producto",remaining:Math.round(first.remaining)})});if(!response.ok)throw new Error("No se pudo enviar la alerta");localStorage.setItem(key,"sent")}catch(error){localStorage.removeItem(key);console.warn("Alerta de Telegram pendiente:",error.message)}
 }
 
+async function publishTelegramFlow({flowBph,time,batchEquivalent,tank}){
+  try{
+    const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"flow",flow:Math.round(flowBph),time,batch:batchEquivalent||"Sin número",tank:`TP-${String(tank).padStart(2,"0")}`})});
+    if(!response.ok)throw new Error("No se pudo publicar el caudal");
+  }catch(error){console.warn("Publicación de caudal en Telegram pendiente:",error.message)}
+}
+
 function calculations(){const normalized=rows.map((r,index)=>({...r,index,remaining:Math.max(0,safeNumber(r.sent)-safeNumber(r.received))})),total=normalized.reduce((s,r)=>s+r.remaining,0);let cursor=0;const segments=[...normalized].reverse().map(r=>{const length=total?r.remaining/total*PIPE_KM:0,result={...r,start:cursor,end:cursor+length,length,percent:total?r.remaining/total*100:0};cursor+=length;return result});return{normalized,segments,total}}
 function input(value,field,index,type="text"){const numeric=type==="number";return`<input type="text" ${numeric?'inputmode="decimal" data-numeric="true"':''} value="${String(value).replaceAll('"','&quot;')}" data-index="${index}" data-field="${field}" aria-label="${field} fila ${index+1}">`}
 
@@ -49,8 +55,6 @@ function renderForecast(){
   if(document.activeElement!==$("#forecastFlowInput"))$("#forecastFlowInput").value=Math.round(forecastFlow);
   if(document.activeElement!==$("#forecastHoursInput"))$("#forecastHoursInput").value=hours?hours.toFixed(2):0;
   $("#forecastTimeDisplay").textContent=forecastFlow>0?`${Math.floor(totalMinutes/60)} h ${String(totalMinutes%60).padStart(2,"0")} min`:"Sin caudal disponible";
-  const referenceTime=tankRecords.at(-1)?.time||$("#tankTime")?.value;
-  $("#forecastFinishDisplay").textContent=forecastFlow>0?finishTime(referenceTime,hours):"—";
   $("#currentCalculatedFlow").innerHTML=`${fmt(forecastFlow)} <small>BBL/H</small>`;
 }
 
@@ -68,7 +72,7 @@ $("#addRow").addEventListener("click",()=>{rows.push({batch:"",product:"NUEVO PR
 function resetLevelFields(prefix){["Meters","Centimeters","Millimeters"].forEach(part=>{$(`#${prefix?`${prefix}Level${part}`:`level${part}`}`).value=0});renderTankModule()}
 $("#resetInitialLevel").addEventListener("click",()=>{resetLevelFields("initial");$("#tankMessage").textContent="Nivel inicial reiniciado. El historial y el acumulado se conservaron.";$("#tankMessage").className="transfer-message success"});
 $("#resetCurrentLevel").addEventListener("click",()=>{resetLevelFields("");$("#tankMessage").textContent="Nivel actual reiniciado. El historial y el acumulado se conservaron.";$("#tankMessage").className="transfer-message success"});
-$("#resetTankOperation").addEventListener("click",()=>{accumulationResetIndex=tankRecords.length;$("#initialTankAccumulated").value=0;["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);$("#tankMessage").textContent="Acumulado y niveles reiniciados. El histórico anterior se conserva.";$("#tankMessage").className="transfer-message success";render()});
+$("#finishBatch").addEventListener("click",()=>{accumulationResetIndex=tankRecords.length;$("#initialTankAccumulated").value=0;["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);const start=$("#tankTime").value;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#batchEquivalentInput").value=rows[0]?.batch||"";render();$("#tankMessage").textContent="Fin de partida registrado. Acumulado y niveles en cero; el histórico anterior se conserva.";$("#tankMessage").className="transfer-message success"});
 $("#tankSelect").addEventListener("change",()=>{["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);$("#tankMessage").textContent="Tanque cambiado. Ingrese los niveles inicial y actual; el histórico se conserva.";$("#tankMessage").className="transfer-message success";render()});
 ["#firstBatchRemainingInput","#forecastFlowInput","#forecastHoursInput"].forEach(id=>$(id).addEventListener("focus",event=>event.target.select()));
 $("#firstBatchRemainingInput").addEventListener("input",event=>{if(!rows.length)return;const remaining=safeNumber(event.target.value),received=safeNumber(rows[0].received);rows[0].sent=received+remaining;render()});
@@ -79,7 +83,7 @@ $("#resetForecast").addEventListener("click",()=>{forecastFlow=tankRecords.at(-1
 $("#registerTankLevel").addEventListener("click",()=>{
   const calc=tankCalculation(),base=tankCalculation("initial"),message=$("#tankMessage"),initialTime=$("#initialTankTime").value,time=$("#tankTime").value;if(!calc.valid||!base.valid||!initialTime||!time){message.textContent=!base.valid?`Nivel inicial: ${base.message}`:!calc.valid?`Nivel actual: ${calc.message}`:"Seleccione la hora inicial y la hora actual.";message.className="transfer-message";return}
   const receivedBbl=Math.round(Math.max(0,calc.gallons-base.gallons)/42),hours=elapsedHours(initialTime,time),calculatedFlow=hours?Math.round(receivedBbl/hours):0,flowBph=flowManuallyEdited?safeNumber($("#forecastFlowInput").value):calculatedFlow,completed=applyTransferredVolume(receivedBbl),accumulatedBbl=safeNumber($("#initialTankAccumulated").value)+tankRecords.slice(accumulationResetIndex).reduce((s,r)=>s+r.receivedBbl,0)+receivedBbl;forecastFlow=flowBph;flowManuallyEdited=false;
-  tankRecords.push({time,tank:calc.tank,batchEquivalent:$("#batchEquivalentInput").value.trim(),levelM:calc.levelM,gallons:calc.gallons,barrels:calc.barrels,receivedBbl,flowBph,elapsedHours:hours,accumulatedBbl});if(completed)$("#batchEquivalentInput").value=rows[0]?.batch||"";const removed=completed?` ${completed} partida${completed>1?"s":""} completada${completed>1?"s":""} y retirada${completed>1?"s":""}.`:"";
+  const batchEquivalent=$("#batchEquivalentInput").value.trim();tankRecords.push({time,tank:calc.tank,batchEquivalent,levelM:calc.levelM,gallons:calc.gallons,barrels:calc.barrels,receivedBbl,flowBph,elapsedHours:hours,accumulatedBbl});publishTelegramFlow({flowBph,time,batchEquivalent,tank:calc.tank});if(completed)$("#batchEquivalentInput").value=rows[0]?.batch||"";const removed=completed?` ${completed} partida${completed>1?"s":""} completada${completed>1?"s":""} y retirada${completed>1?"s":""}.`:"";
   const confirmation=`Lectura registrada: ${fmt(receivedBbl)} BBL recibidos en ${fmt(hours,2)} h; caudal calculado ${fmt(flowBph)} BBL/H y sumado al acumulado.${removed}`;
   $("#initialTankTime").value=time;$("#tankTime").value=addOneHour(time);["Meters","Centimeters","Millimeters"].forEach(part=>{$(`#initialLevel${part}`).value=$(`#level${part}`).value});render();message.textContent=confirmation;message.className="transfer-message success";
 });

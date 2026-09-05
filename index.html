@@ -45,10 +45,7 @@
             <label>Caudal para cálculo <span>BBL/H</span><input id="forecastFlowInput" type="number" min="0" step="1" value="0"></label>
             <label>Tiempo adicional <span>horas</span><input id="forecastHoursInput" type="number" min="0" step="0.01" value="0"></label>
           </div>
-          <div class="forecast-results">
-            <div class="forecast-result"><span>Tiempo restante aproximado</span><strong id="forecastTimeDisplay">0 h 00 min</strong></div>
-            <div class="forecast-result finish-result"><span>Hora estimada de finalización</span><strong id="forecastFinishDisplay">—</strong></div>
-          </div>
+          <div class="forecast-result"><span>Tiempo restante aproximado</span><strong id="forecastTimeDisplay">0 h 00 min</strong></div>
           <p class="forecast-formula">Faltante ÷ caudal = tiempo adicional. Puedes editar cualquiera de los tres valores.</p>
         </div>
       </section>
@@ -56,7 +53,7 @@
       <section class="tank-module" aria-label="Cálculo de volumen por nivel de tanque">
         <div class="tank-module-head">
           <div><span class="eyebrow">AFORO DE TANQUES</span><h2>Recepción calculada por nivel</h2></div>
-          <button id="resetTankOperation" class="level-reset" type="button">Borrar acumulado y niveles</button>
+          <button id="finishBatch" class="level-reset finish-batch" type="button">Fin de partida</button>
         </div>
         <div class="tank-layout">
           <div class="tank-controls">
