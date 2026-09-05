@@ -1,6 +1,7 @@
 const PIPE_KM=127,COLORS=["#bdff4a","#24d6d1","#ffb84d","#bda7ff","#ff7b68","#62a8ff","#f279c6","#85d37d","#ffd966"];
 const initialRows=[{batch:"126",product:"JET A1",sent:7367,received:1608},{batch:"127",product:"DESTILADO",sent:101,received:0},{batch:"128",product:"DIESEL OIL",sent:36850,received:0}];
 let rows=structuredClone(initialRows),tankRecords=[],forecastFlow=0,flowManuallyEdited=false,accumulationResetIndex=0;
+let operationStatus={status:"running",since:null,reason:""},operationHistory=[],telegramAlertsSent=[],syncReady=false,syncSaveTimer=null,lastRemoteUpdate=null;
 const $=s=>document.querySelector(s),safeNumber=v=>Math.max(0,Number(v)||0),fmt=(n,d=0)=>new Intl.NumberFormat("es-EC",{maximumFractionDigits:d,minimumFractionDigits:d}).format(n);
 
 function elapsedHours(a,b){const m=v=>{const[h,x]=v.split(":").map(Number);return h*60+x};let d=m(b)-m(a);if(d<=0)d+=1440;return d/60}
@@ -34,15 +35,41 @@ function renderTankModule(){
 
 async function checkTelegramAlert(normalized){
   const first=normalized.find(r=>r.remaining>0);if(!first||first.remaining>1000)return;
-  const key=`telegram-alert-${first.batch||first.product}`;if(localStorage.getItem(key))return;localStorage.setItem(key,"pending");
-  try{const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({batch:first.batch||"Sin número",product:first.product||"Sin producto",remaining:Math.round(first.remaining)})});if(!response.ok)throw new Error("No se pudo enviar la alerta");localStorage.setItem(key,"sent")}catch(error){localStorage.removeItem(key);console.warn("Alerta de Telegram pendiente:",error.message)}
+  const key=`telegram-alert-${first.batch||first.product}`;if(telegramAlertsSent.includes(key))return;telegramAlertsSent.push(key);
+  try{const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({batch:first.batch||"Sin número",product:first.product||"Sin producto",remaining:Math.round(first.remaining)})});if(!response.ok)throw new Error("No se pudo enviar la alerta");scheduleStateSave()}catch(error){telegramAlertsSent=telegramAlertsSent.filter(item=>item!==key);console.warn("Alerta de Telegram pendiente:",error.message)}
 }
 
-async function publishTelegramFlow({flowBph,time,batchEquivalent,tank}){
+async function publishTelegramFlow({flowBph,time,batchEquivalent,tank,product,sent,received,remaining}){
   try{
-    const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"flow",flow:Math.round(flowBph),time,batch:batchEquivalent||"Sin número",tank:`TP-${String(tank).padStart(2,"0")}`})});
+    const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"flow",flow:Math.round(flowBph),time,batch:batchEquivalent||"Sin número",tank:`TP-${String(tank).padStart(2,"0")}`,product,sent,received,remaining})});
     if(!response.ok)throw new Error("No se pudo publicar el caudal");
   }catch(error){console.warn("Publicación de caudal en Telegram pendiente:",error.message)}
+}
+
+async function publishOperationStatus(payload){
+  try{const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"operation",...payload})});if(!response.ok)throw new Error("No se pudo publicar el estado")}
+  catch(error){console.warn("Publicación del estado operativo pendiente:",error.message)}
+}
+
+const persistedFieldIds=["tankSelect","batchEquivalentInput","initialTankAccumulated","initialTankTime","tankTime","initialLevelMeters","initialLevelCentimeters","initialLevelMillimeters","levelMeters","levelCentimeters","levelMillimeters","stopReason","operationTime","operationObservation"];
+function captureState(){const fields={};persistedFieldIds.forEach(id=>{const element=document.getElementById(id);if(element)fields[id]=element.value});return{version:1,rows,tankRecords,forecastFlow,flowManuallyEdited,accumulationResetIndex,operationStatus,operationHistory,telegramAlertsSent,fields}}
+function applySharedState(state){
+  if(!state||typeof state!=="object"||!Object.keys(state).length)return false;
+  if(Array.isArray(state.rows))rows=state.rows.slice(0,100);if(Array.isArray(state.tankRecords))tankRecords=state.tankRecords.slice(-2000);forecastFlow=safeNumber(state.forecastFlow);flowManuallyEdited=Boolean(state.flowManuallyEdited);accumulationResetIndex=Math.min(tankRecords.length,Math.max(0,Number(state.accumulationResetIndex)||0));
+  if(state.operationStatus&&typeof state.operationStatus==="object")operationStatus=state.operationStatus;if(Array.isArray(state.operationHistory))operationHistory=state.operationHistory.slice(-500);if(Array.isArray(state.telegramAlertsSent))telegramAlertsSent=state.telegramAlertsSent.slice(-500);
+  Object.entries(state.fields||{}).forEach(([id,value])=>{const element=document.getElementById(id);if(element)element.value=value});return true;
+}
+function setSyncStatus(text){const element=$("#syncStatus");if(element)element.textContent=text}
+function scheduleStateSave(){if(!syncReady)return;clearTimeout(syncSaveTimer);syncSaveTimer=setTimeout(saveSharedState,700)}
+async function saveSharedState(){
+  setSyncStatus("Guardando…");
+  try{const response=await fetch("/api/app-state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({state:captureState()})});if(!response.ok)throw new Error();const data=await response.json();lastRemoteUpdate=data.updated_at;setSyncStatus("Datos sincronizados")}
+  catch(error){setSyncStatus("Sin conexión para guardar")}
+}
+async function loadSharedState(showStatus=true){
+  if(showStatus)setSyncStatus("Cargando datos…");
+  try{const response=await fetch("/api/app-state",{cache:"no-store"});if(!response.ok)throw new Error();const data=await response.json();const changed=data.updated_at&&data.updated_at!==lastRemoteUpdate;if(changed&&applySharedState(data.state)){lastRemoteUpdate=data.updated_at;render()}if(showStatus)setSyncStatus("Datos sincronizados");return Boolean(data.updated_at)}
+  catch(error){if(showStatus)setSyncStatus("Modo local");return false}
 }
 
 function calculations(){const normalized=rows.map((r,index)=>({...r,index,remaining:Math.max(0,safeNumber(r.sent)-safeNumber(r.received))})),total=normalized.reduce((s,r)=>s+r.remaining,0);let cursor=0;const segments=[...normalized].reverse().map(r=>{const length=total?r.remaining/total*PIPE_KM:0,result={...r,start:cursor,end:cursor+length,length,percent:total?r.remaining/total*100:0};cursor+=length;return result});return{normalized,segments,total}}
@@ -58,16 +85,24 @@ function renderForecast(){
   $("#currentCalculatedFlow").innerHTML=`${fmt(forecastFlow)} <small>BBL/H</small>`;
 }
 
+function renderOperationStatus(){
+  const stopped=operationStatus.status==="stopped",badge=$("#operationStatusBadge");
+  $("#operationStatusText").textContent=stopped?`Paralizado · ${operationStatus.reason||"Sin motivo"}`:"Operación normal";badge.textContent=stopped?"PARALIZADO":"EN OPERACIÓN";badge.className=`operation-badge ${stopped?"stopped":"running"}`;
+  $("#stopOperation").disabled=stopped;$("#resumeOperation").disabled=!stopped;$("#operationHistoryEmpty").hidden=operationHistory.length>0;
+  $("#operationHistory").innerHTML=[...operationHistory].reverse().map(event=>`<div class="operation-event"><strong>${event.status==="stopped"?"⏸ Paralización":"▶ Reinicio"}</strong><span>${event.time?.replace(":","h")||"—"}</span><div>${event.status==="stopped"?(event.reason||"Sin motivo"):(event.duration?`Tiempo detenido: ${event.duration}`:"Operación restablecida")}${event.observation?`<small>${event.observation}</small>`:""}</div></div>`).join("");
+}
+
 function render(){
   const{normalized,segments,total}=calculations();checkTelegramAlert(normalized);
   $("#productRows").innerHTML=normalized.map((r,i)=>`<tr><td>${input(r.batch,"batch",i)}</td><td>${input(r.product,"product",i)}</td><td>${input(r.sent,"sent",i,"number")}</td><td>${input(r.received,"received",i,"number")}</td><td class="calculated">${fmt(r.remaining)}</td><td><button class="remove" data-remove="${i}" aria-label="Eliminar fila">×</button></td></tr>`).join("");
   $("#totalVolume").innerHTML=`${fmt(total)} <small>u</small>`;$("#activeProducts").textContent=normalized.filter(r=>r.remaining>0).length;$("#occupancy").innerHTML=`${total>0?"100":"0"} <small>%</small>`;$("#emptyState").hidden=total>0;
   const active=segments.filter(r=>r.remaining>0);$("#pipeline").innerHTML=active.map(r=>`<div class="pipe-segment" style="width:${r.percent}%;background:${COLORS[r.index%COLORS.length]}" title="${r.product}: km ${fmt(r.start,2)} a ${fmt(r.end,2)}"><span>${r.percent>=8?r.product:""}</span></div>`).join("");
-  $("#segmentList").innerHTML=active.length?[...active].reverse().map(r=>`<div class="segment-row"><span class="dot" style="background:${COLORS[r.index%COLORS.length]}"></span><div class="segment-info"><strong>${r.product||"Sin nombre"}</strong><small>Partida ${r.batch||"—"} · ${fmt(r.percent,2)}% del ducto</small></div><div class="segment-km">${fmt(r.start,2)} → ${fmt(r.end,2)} km<small>Longitud: ${fmt(r.length,2)} km</small></div></div>`).join(""):"";renderTankModule();renderForecast();
+  $("#segmentList").innerHTML=active.length?[...active].reverse().map(r=>`<div class="segment-row"><span class="dot" style="background:${COLORS[r.index%COLORS.length]}"></span><div class="segment-info"><strong>${r.product||"Sin nombre"}</strong><small>Partida ${r.batch||"—"} · ${fmt(r.percent,2)}% del ducto</small></div><div class="segment-km">${fmt(r.start,2)} → ${fmt(r.end,2)} km<small>Longitud: ${fmt(r.length,2)} km</small></div></div>`).join(""):"";renderTankModule();renderForecast();renderOperationStatus();
 }
 
-document.addEventListener("input",e=>{const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset,position=el.selectionStart;rows[Number(index)][field]=el.value;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();replacement?.setSelectionRange(position,position)});
-document.addEventListener("click",e=>{const remove=e.target.closest("[data-remove]");if(remove){rows.splice(Number(remove.dataset.remove),1);render()}});
+document.addEventListener("input",e=>{scheduleStateSave();const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset,position=el.selectionStart;rows[Number(index)][field]=el.value;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();replacement?.setSelectionRange(position,position)});
+document.addEventListener("change",scheduleStateSave);
+document.addEventListener("click",e=>{const remove=e.target.closest("[data-remove]");if(remove){rows.splice(Number(remove.dataset.remove),1);render()}setTimeout(scheduleStateSave)});
 $("#addRow").addEventListener("click",()=>{rows.push({batch:"",product:"NUEVO PRODUCTO",sent:0,received:0});render()});
 function resetLevelFields(prefix){["Meters","Centimeters","Millimeters"].forEach(part=>{$(`#${prefix?`${prefix}Level${part}`:`level${part}`}`).value=0});renderTankModule()}
 $("#resetInitialLevel").addEventListener("click",()=>{resetLevelFields("initial");$("#tankMessage").textContent="Nivel inicial reiniciado. El historial y el acumulado se conservaron.";$("#tankMessage").className="transfer-message success"});
@@ -79,14 +114,27 @@ $("#firstBatchRemainingInput").addEventListener("input",event=>{if(!rows.length)
 $("#forecastFlowInput").addEventListener("input",event=>{forecastFlow=safeNumber(event.target.value);flowManuallyEdited=true;renderForecast()});
 $("#forecastHoursInput").addEventListener("input",event=>{const hours=safeNumber(event.target.value),remaining=calculations().normalized[0]?.remaining||0;forecastFlow=hours>0?remaining/hours:0;renderForecast()});
 $("#resetForecast").addEventListener("click",()=>{forecastFlow=tankRecords.at(-1)?.flowBph||0;flowManuallyEdited=false;renderForecast()});
+$("#stopOperation").addEventListener("click",()=>{
+  const time=$("#operationTime").value,reason=$("#stopReason").value,observation=$("#operationObservation").value.trim(),message=$("#operationMessage");if(!time){message.textContent="Seleccione la hora de paralización.";return}
+  operationStatus={status:"stopped",since:time,reason};operationHistory.push({status:"stopped",time,reason,observation,createdAt:new Date().toISOString()});renderOperationStatus();publishOperationStatus({status:"stopped",time,reason,observation});message.textContent="Paralización registrada y enviada a Telegram.";message.className="transfer-message success";
+});
+$("#resumeOperation").addEventListener("click",()=>{
+  const time=$("#operationTime").value,observation=$("#operationObservation").value.trim(),message=$("#operationMessage");if(!time){message.textContent="Seleccione la hora de reinicio.";return}if(operationStatus.status!=="stopped"){message.textContent="El poliducto ya consta en operación.";return}
+  const hours=elapsedHours(operationStatus.since,time),minutes=Math.round(hours*60),duration=`${Math.floor(minutes/60)} h ${String(minutes%60).padStart(2,"0")} min`;operationStatus={status:"running",since:time,reason:""};operationHistory.push({status:"running",time,duration,observation,createdAt:new Date().toISOString()});renderOperationStatus();publishOperationStatus({status:"running",time,stoppedDuration:duration,observation});message.textContent="Reinicio de operación registrado y enviado a Telegram.";message.className="transfer-message success";
+});
 ["#tankSelect","#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters","#initialTankTime","#tankTime","#initialTankAccumulated"].forEach(s=>$(s).addEventListener("input",renderTankModule));
 $("#registerTankLevel").addEventListener("click",()=>{
   const calc=tankCalculation(),base=tankCalculation("initial"),message=$("#tankMessage"),initialTime=$("#initialTankTime").value,time=$("#tankTime").value;if(!calc.valid||!base.valid||!initialTime||!time){message.textContent=!base.valid?`Nivel inicial: ${base.message}`:!calc.valid?`Nivel actual: ${calc.message}`:"Seleccione la hora inicial y la hora actual.";message.className="transfer-message";return}
-  const receivedBbl=Math.round(Math.max(0,calc.gallons-base.gallons)/42),hours=elapsedHours(initialTime,time),calculatedFlow=hours?Math.round(receivedBbl/hours):0,flowBph=flowManuallyEdited?safeNumber($("#forecastFlowInput").value):calculatedFlow,completed=applyTransferredVolume(receivedBbl),accumulatedBbl=safeNumber($("#initialTankAccumulated").value)+tankRecords.slice(accumulationResetIndex).reduce((s,r)=>s+r.receivedBbl,0)+receivedBbl;forecastFlow=flowBph;flowManuallyEdited=false;
-  const batchEquivalent=$("#batchEquivalentInput").value.trim();tankRecords.push({time,tank:calc.tank,batchEquivalent,levelM:calc.levelM,gallons:calc.gallons,barrels:calc.barrels,receivedBbl,flowBph,elapsedHours:hours,accumulatedBbl});publishTelegramFlow({flowBph,time,batchEquivalent,tank:calc.tank});if(completed)$("#batchEquivalentInput").value=rows[0]?.batch||"";const removed=completed?` ${completed} partida${completed>1?"s":""} completada${completed>1?"s":""} y retirada${completed>1?"s":""}.`:"";
+  const receivedBbl=Math.round(Math.max(0,calc.gallons-base.gallons)/42),hours=elapsedHours(initialTime,time),calculatedFlow=hours?Math.round(receivedBbl/hours):0,flowBph=flowManuallyEdited?safeNumber($("#forecastFlowInput").value):calculatedFlow,batchEquivalent=$("#batchEquivalentInput").value.trim(),noticeRow=rows.find(r=>String(r.batch).trim().toLowerCase()===batchEquivalent.toLowerCase())||rows[0],noticeSent=safeNumber(noticeRow?.sent),noticePreviousReceived=safeNumber(noticeRow?.received),noticeReceived=Math.min(noticeSent,noticePreviousReceived+receivedBbl),noticeRemaining=Math.max(0,noticeSent-noticeReceived),noticeProduct=noticeRow?.product||"Sin producto",completed=applyTransferredVolume(receivedBbl),accumulatedBbl=safeNumber($("#initialTankAccumulated").value)+tankRecords.slice(accumulationResetIndex).reduce((s,r)=>s+r.receivedBbl,0)+receivedBbl;forecastFlow=flowBph;flowManuallyEdited=false;
+  tankRecords.push({time,tank:calc.tank,batchEquivalent,levelM:calc.levelM,gallons:calc.gallons,barrels:calc.barrels,receivedBbl,flowBph,elapsedHours:hours,accumulatedBbl});publishTelegramFlow({flowBph,time,batchEquivalent:batchEquivalent||noticeRow?.batch,tank:calc.tank,product:noticeProduct,sent:noticeSent,received:noticeReceived,remaining:noticeRemaining});if(completed)$("#batchEquivalentInput").value=rows[0]?.batch||"";const removed=completed?` ${completed} partida${completed>1?"s":""} completada${completed>1?"s":""} y retirada${completed>1?"s":""}.`:"";
   const confirmation=`Lectura registrada: ${fmt(receivedBbl)} BBL recibidos en ${fmt(hours,2)} h; caudal calculado ${fmt(flowBph)} BBL/H y sumado al acumulado.${removed}`;
   $("#initialTankTime").value=time;$("#tankTime").value=addOneHour(time);["Meters","Centimeters","Millimeters"].forEach(part=>{$(`#initialLevel${part}`).value=$(`#level${part}`).value});render();message.textContent=confirmation;message.className="transfer-message success";
 });
 $("#resetData").addEventListener("click",()=>{rows=structuredClone(initialRows);tankRecords=[];forecastFlow=0;flowManuallyEdited=false;accumulationResetIndex=0;$("#initialTankAccumulated").value=0;["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);$("#tankMessage").textContent="Ingrese el nivel inicial y el nivel actual para calcular el primer caudal.";$("#tankMessage").className="transfer-message";render()});
 $("#saveImage").addEventListener("click",()=>window.print());
-const now=new Date(),start=`${String(now.getHours()).padStart(2,"0")}:00`;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#tankSelect").innerHTML=Object.keys(window.TANK_CALIBRATION||{}).map(t=>`<option value="${t}">TP-${t.padStart(2,"0")}</option>`).join("");$("#batchEquivalentInput").value=rows[0]?.batch||"";render();
+async function initializeApp(){
+  const now=new Date(),start=`${String(now.getHours()).padStart(2,"0")}:00`,current=`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#operationTime").value=current;$("#tankSelect").innerHTML=Object.keys(window.TANK_CALIBRATION||{}).map(t=>`<option value="${t}">TP-${t.padStart(2,"0")}</option>`).join("");$("#batchEquivalentInput").value=rows[0]?.batch||"";
+  const found=await loadSharedState();syncReady=true;render();if(!found)scheduleStateSave();
+  setInterval(()=>{if(!["INPUT","SELECT","TEXTAREA"].includes(document.activeElement?.tagName))loadSharedState(false)},15000);
+}
+initializeApp();

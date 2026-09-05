@@ -20,7 +20,7 @@
           <h1>Estación Reductora Pascuales</h1>
         </div>
       </div>
-      <div class="status"><span></span> Cálculo activo</div>
+      <div class="status"><span></span> <b id="syncStatus">Cargando datos…</b></div>
     </header>
 
     <main>
@@ -34,6 +34,29 @@
       <section class="current-flow-panel" aria-label="Caudal actual">
         <div><span class="eyebrow">CAUDAL ACTUAL</span><p>Calculado con las dos últimas lecturas registradas</p></div>
         <strong id="currentCalculatedFlow">0 <small>BBL/H</small></strong>
+      </section>
+
+      <section class="pipeline-status-panel" aria-label="Estado operativo del poliducto">
+        <div class="pipeline-status-head">
+          <div><span class="eyebrow">ESTADO DEL POLIDUCTO</span><h2 id="operationStatusText">Operación normal</h2></div>
+          <span id="operationStatusBadge" class="operation-badge running">EN OPERACIÓN</span>
+        </div>
+        <div class="operation-controls">
+          <label>Motivo de paralización
+            <select id="stopReason">
+              <option value="Fiscalización de tanques en RLL">Fiscalización de tanques en RLL</option>
+              <option value="Paralización por caída de presión">Paralización por caída de presión</option>
+              <option value="Otra causa">Otra causa</option>
+            </select>
+          </label>
+          <label>Hora<input id="operationTime" type="time"></label>
+          <label>Observación opcional<input id="operationObservation" type="text" placeholder="Detalle adicional"></label>
+          <button id="stopOperation" class="button stop-button" type="button">⏸ Paralizar</button>
+          <button id="resumeOperation" class="button resume-button" type="button">▶ Reiniciar operación</button>
+        </div>
+        <p id="operationMessage" class="transfer-message" aria-live="polite"></p>
+        <div id="operationHistoryEmpty" class="hourly-empty">No existen eventos operativos registrados.</div>
+        <div id="operationHistory" class="operation-history"></div>
       </section>
 
       <section class="operation-forecast" aria-label="Estimación de la primera partida">

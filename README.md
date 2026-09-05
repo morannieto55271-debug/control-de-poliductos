@@ -20,8 +20,17 @@ Cuando la primera partida queda entre 1 y 1.000 BBL, la aplicación envía una s
 
 Además, cada vez que se registra una lectura de nivel, publica en el mismo chat el caudal calculado como **Caudal Poliducto Libertad**, junto con la hora, partida y tanque.
 
+El mensaje incluye producto, volumen bombeado, volumen recibido y saldo pendiente. El módulo **Estado del poliducto** permite registrar una paralización por fiscalización de tanques en RLL, caída de presión u otra causa, y posteriormente registrar el reinicio con hora y tiempo total detenido. Ambos eventos se publican en Telegram y quedan en el historial.
+
 - `TELEGRAM_BOT_TOKEN`: token entregado por BotFather.
 - `TELEGRAM_CHAT_ID`: identificador del chat o grupo receptor.
+
+## Sincronización entre dispositivos
+
+La aplicación conserva automáticamente su último estado en Supabase y lo carga al abrirse desde otro equipo. También consulta cambios cada 15 segundos cuando el operador no está editando un campo.
+
+- `SUPABASE_URL`: URL del proyecto Supabase.
+- `SUPABASE_SECRET_KEY`: clave secreta del proyecto, configurada únicamente en Vercel.
 
 Estas claves deben configurarse en **Vercel → Settings → Environment Variables** y nunca deben escribirse en `app.js` ni subirse a GitHub.
 

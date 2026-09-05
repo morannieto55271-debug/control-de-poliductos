@@ -12,7 +12,7 @@ module.exports = async function handler(request, response) {
     return response.status(503).json({ error: "Telegram todavía no está configurado" });
   }
 
-  const { type = "alert", batch, product, remaining, flow, time, tank } = request.body || {};
+  const { type = "alert", batch, product, remaining, flow, time, tank, sent, received, status, reason, observation, stoppedDuration } = request.body || {};
 
   const clean = value => String(value ?? "").replace(/[<>]/g, "").slice(0, 80);
 
@@ -28,10 +28,31 @@ module.exports = async function handler(request, response) {
       `Caudal: ${Math.round(flowNumber).toLocaleString("es-EC")} BBL/H`,
       `Hora: ${clean(time) || "Sin registrar"}`,
       `Partida: ${clean(batch) || "Sin registrar"}`,
-      `Tanque: ${clean(tank) || "Sin registrar"}`
+      `Producto: ${clean(product) || "Sin registrar"}`,
+      `Tanque: ${clean(tank) || "Sin registrar"}`,
+      `📤 Bombeado: ${Math.round(Number(sent) || 0).toLocaleString("es-EC")} BBL`,
+      `📥 Recibido: ${Math.round(Number(received) || 0).toLocaleString("es-EC")} BBL`,
+      `⏳ Falta recibir: ${Math.round(Number(remaining) || 0).toLocaleString("es-EC")} BBL`
     ].join("\n");
 
     return sendTelegram(botToken, chatId, flowText, response);
+  }
+
+  if (type === "operation") {
+    if (!['stopped', 'running'].includes(status)) {
+      return response.status(400).json({ error: "Estado operativo no válido" });
+    }
+    const isStopped = status === "stopped";
+    const operationText = [
+      isStopped ? "⏸️🚨 POLIDUCTO LIBERTAD PARALIZADO" : "▶️✅ OPERACIÓN REINICIADA",
+      "",
+      ...(isStopped ? [`📋 Motivo: ${clean(reason) || "Sin especificar"}`] : []),
+      `🕐 Hora: ${clean(time) || "Sin registrar"}`,
+      ...(!isStopped && stoppedDuration ? [`⏱️ Tiempo paralizado: ${clean(stoppedDuration)}`] : []),
+      ...(observation ? [`📝 Observación: ${clean(observation)}`] : []),
+      "📍 Estación Reductora Pascuales"
+    ].join("\n");
+    return sendTelegram(botToken, chatId, operationText, response);
   }
 
   const remainingNumber = Number(remaining);
