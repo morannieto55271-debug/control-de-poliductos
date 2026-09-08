@@ -6,6 +6,11 @@ const $=s=>document.querySelector(s),safeNumber=v=>Math.max(0,Number(v)||0),fmt=
 
 function elapsedHours(a,b){const m=v=>{const[h,x]=v.split(":").map(Number);return h*60+x};let d=m(b)-m(a);if(d<=0)d+=1440;return d/60}
 function addOneHour(t){const[h,m]=t.split(":").map(Number);return`${String((h+1)%24).padStart(2,"0")}:${String(m).padStart(2,"0")}`}
+function estimatedFinish(startTime,hours){
+  if(!startTime||!Number.isFinite(hours)||hours<=0)return{time:"—",label:"Sin caudal disponible"};
+  const[h,m]=startTime.split(":").map(Number),added=Math.round(hours*60),total=h*60+m+added,days=Math.floor(total/1440),minutes=total%1440,time=`${String(Math.floor(minutes/60)).padStart(2,"0")}:${String(minutes%60).padStart(2,"0")}`;
+  return{time,label:`${time}${days===1?" · mañana":days>1?` · en ${days} días`:""}`};
+}
 function applyTransferredVolume(volume){
   if(volume<=0||!rows.length)return 0;
   rows.at(-1).sent=safeNumber(rows.at(-1).sent)+volume;
@@ -26,7 +31,7 @@ function tankCalculation(prefix=""){
 
 function renderTankModule(){
   if(!$("#tankSelect"))return;
-  const calc=tankCalculation(),base=tankCalculation("initial"),initial=safeNumber($("#initialTankAccumulated")?.value),accumulated=initial+tankRecords.slice(accumulationResetIndex).reduce((s,r)=>s+r.receivedBbl,0),last=tankRecords.at(-1),received=calc.valid&&base.valid?Math.round(Math.max(0,calc.gallons-base.gallons)/42):0,hours=$("#initialTankTime")?.value&&$("#tankTime")?.value?elapsedHours($("#initialTankTime").value,$("#tankTime").value):0,flow=hours?Math.round(received/hours):0,shownReceived=received>0?received:(last?.receivedBbl||0);
+  const calc=tankCalculation(),base=tankCalculation("initial"),initial=safeNumber($("#initialTankAccumulated")?.value),accumulated=initial+tankRecords.slice(accumulationResetIndex).reduce((s,r)=>s+r.receivedBbl,0),last=[...tankRecords].reverse().find(r=>r.tank===$("#tankSelect").value),received=calc.valid&&base.valid?Math.round(Math.max(0,calc.gallons-base.gallons)/42):0,hours=$("#initialTankTime")?.value&&$("#tankTime")?.value?elapsedHours($("#initialTankTime").value,$("#tankTime").value):0,flow=hours?Math.round(received/hours):0,shownReceived=received>0?received:(last?.receivedBbl||0);
   $("#tankAccumulatedDisplay").innerHTML=`${fmt(accumulated)} <small>BBL</small>`;$("#tankReceivedDisplay").innerHTML=`${fmt(shownReceived)} <small>BBL</small>`;$("#tankFlowDisplay").innerHTML=`${fmt(flow)} <small>BBL/H</small>`;$("#currentCalculatedFlow").innerHTML=`${fmt(last?.flowBph||0)} <small>BBL/H</small>`;$("#tankHistoryEmpty").hidden=tankRecords.length>0;
   $("#tankHistory").innerHTML=tankRecords.map(r=>`<tr><td>${r.time.replace(":","h")}</td><td>${r.batchEquivalent||"—"}</td><td>TP-${r.tank.padStart(2,"0")}</td><td>${fmt(r.levelM,3)} m</td><td>${fmt(r.gallons)} GLS</td><td>${fmt(r.receivedBbl)} BBL</td><td>${fmt(r.flowBph)} BBL/H</td><td>${fmt(r.accumulatedBbl)} BBL</td></tr>`).join("");
   if(!calc.valid){$("#tankLevelDisplay").textContent="Fuera de rango";$("#tankGallonsDisplay").innerHTML="— <small>GLS</small>";$("#tankReceivedDisplay").innerHTML="— <small>BBL</small>";$("#tankFlowDisplay").innerHTML="— <small>BBL/H</small>";$("#tankMessage").textContent=calc.message;$("#tankMessage").className="transfer-message";return}
@@ -41,7 +46,8 @@ async function checkTelegramAlert(normalized){
 
 async function publishTelegramFlow({flowBph,time,batchEquivalent,tank,product,sent,received,remaining}){
   try{
-    const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"flow",flow:Math.round(flowBph),time,batch:batchEquivalent||"Sin número",tank:`TP-${String(tank).padStart(2,"0")}`,product,sent,received,remaining})});
+    const hours=flowBph>0?remaining/flowBph:0,finish=estimatedFinish(time,hours),timeRemaining=flowBph>0?`${Math.floor(Math.round(hours*60)/60)} h ${String(Math.round(hours*60)%60).padStart(2,"0")} min`:"Sin caudal disponible";
+    const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"flow",flow:Math.round(flowBph),time,batch:batchEquivalent||"Sin número",tank:`TP-${String(tank).padStart(2,"0")}`,product,sent,received,remaining,timeRemaining,estimatedEnd:finish.label})});
     if(!response.ok)throw new Error("No se pudo publicar el caudal");
   }catch(error){console.warn("Publicación de caudal en Telegram pendiente:",error.message)}
 }
@@ -76,12 +82,13 @@ function calculations(){const normalized=rows.map((r,index)=>({...r,index,remain
 function input(value,field,index,type="text"){const numeric=type==="number";return`<input type="text" ${numeric?'inputmode="decimal" data-numeric="true"':''} value="${String(value).replaceAll('"','&quot;')}" data-index="${index}" data-field="${field}" aria-label="${field} fila ${index+1}">`}
 
 function renderForecast(){
-  const first=calculations().normalized[0],remaining=first?.remaining||0,hours=forecastFlow>0?remaining/forecastFlow:0,totalMinutes=Math.round(hours*60);
+  const first=calculations().normalized[0],remaining=first?.remaining||0,hours=forecastFlow>0?remaining/forecastFlow:0,totalMinutes=Math.round(hours*60),startTime=$("#tankTime")?.value||new Date().toTimeString().slice(0,5),finish=estimatedFinish(startTime,hours);
   $("#firstBatchName").textContent=first?`Partida ${first.batch||"—"} · ${first.product||"Sin producto"}`:"No existen partidas";
   if(document.activeElement!==$("#firstBatchRemainingInput"))$("#firstBatchRemainingInput").value=Math.round(remaining);
   if(document.activeElement!==$("#forecastFlowInput"))$("#forecastFlowInput").value=Math.round(forecastFlow);
   if(document.activeElement!==$("#forecastHoursInput"))$("#forecastHoursInput").value=hours?hours.toFixed(2):0;
   $("#forecastTimeDisplay").textContent=forecastFlow>0?`${Math.floor(totalMinutes/60)} h ${String(totalMinutes%60).padStart(2,"0")} min`:"Sin caudal disponible";
+  $("#forecastFinishDisplay").textContent=forecastFlow>0?finish.label:"Sin caudal disponible";
   $("#currentCalculatedFlow").innerHTML=`${fmt(forecastFlow)} <small>BBL/H</small>`;
 }
 
@@ -108,7 +115,13 @@ function resetLevelFields(prefix){["Meters","Centimeters","Millimeters"].forEach
 $("#resetInitialLevel").addEventListener("click",()=>{resetLevelFields("initial");$("#tankMessage").textContent="Nivel inicial reiniciado. El historial y el acumulado se conservaron.";$("#tankMessage").className="transfer-message success"});
 $("#resetCurrentLevel").addEventListener("click",()=>{resetLevelFields("");$("#tankMessage").textContent="Nivel actual reiniciado. El historial y el acumulado se conservaron.";$("#tankMessage").className="transfer-message success"});
 $("#finishBatch").addEventListener("click",()=>{accumulationResetIndex=tankRecords.length;$("#initialTankAccumulated").value=0;["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);const start=$("#tankTime").value;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#batchEquivalentInput").value=rows[0]?.batch||"";render();$("#tankMessage").textContent="Fin de partida registrado. Acumulado y niveles en cero; el histórico anterior se conserva.";$("#tankMessage").className="transfer-message success"});
-$("#tankSelect").addEventListener("change",()=>{["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);$("#tankMessage").textContent="Tanque cambiado. Ingrese los niveles inicial y actual; el histórico se conserva.";$("#tankMessage").className="transfer-message success";render()});
+function setLevelFields(prefix,levelM){const totalMm=Math.max(0,Math.round(safeNumber(levelM)*1000)),meters=Math.floor(totalMm/1000),centimeters=Math.floor((totalMm%1000)/10),millimeters=totalMm%10;$("#"+(prefix?`${prefix}LevelMeters`:"levelMeters")).value=meters;$("#"+(prefix?`${prefix}LevelCentimeters`:"levelCentimeters")).value=centimeters;$("#"+(prefix?`${prefix}LevelMillimeters`:"levelMillimeters")).value=millimeters}
+$("#tankSelect").addEventListener("change",()=>{
+  const tank=$("#tankSelect").value,lastForTank=[...tankRecords].reverse().find(record=>record.tank===tank);forecastFlow=0;flowManuallyEdited=false;
+  if(lastForTank){setLevelFields("initial",lastForTank.levelM);setLevelFields("",lastForTank.levelM);$("#initialTankTime").value=lastForTank.time;$("#tankTime").value=addOneHour(lastForTank.time);$("#tankMessage").textContent=`TP-${tank.padStart(2,"0")} seleccionado. Se tomó su propia última lectura como nivel inicial.`}
+  else{["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);$("#tankMessage").textContent=`TP-${tank.padStart(2,"0")} seleccionado sin lecturas previas. Ingrese el nivel inicial y luego el nivel actual.`}
+  $("#tankMessage").className="transfer-message success";render();
+});
 ["#firstBatchRemainingInput","#forecastFlowInput","#forecastHoursInput"].forEach(id=>$(id).addEventListener("focus",event=>event.target.select()));
 $("#firstBatchRemainingInput").addEventListener("input",event=>{if(!rows.length)return;const remaining=safeNumber(event.target.value),received=safeNumber(rows[0].received);rows[0].sent=received+remaining;render()});
 $("#forecastFlowInput").addEventListener("input",event=>{forecastFlow=safeNumber(event.target.value);flowManuallyEdited=true;renderForecast()});
