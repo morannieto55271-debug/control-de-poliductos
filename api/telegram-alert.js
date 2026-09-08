@@ -18,8 +18,28 @@ module.exports = async function handler(request, response) {
 
   if (type === "flow") {
     const flowNumber = Number(flow);
+    const remainingNumber = Number(remaining);
     if (!Number.isFinite(flowNumber) || flowNumber < 0) {
       return response.status(400).json({ error: "El caudal no es válido" });
+    }
+
+    let calculatedRemainingTime = clean(timeRemaining);
+    let calculatedEstimatedEnd = clean(estimatedEnd);
+    if (flowNumber > 0 && Number.isFinite(remainingNumber) && remainingNumber >= 0) {
+      const totalSeconds = Math.round((remainingNumber / flowNumber) * 3600);
+      const durationHours = Math.floor(totalSeconds / 3600);
+      const durationMinutes = Math.floor((totalSeconds % 3600) / 60);
+      const durationSeconds = totalSeconds % 60;
+      calculatedRemainingTime = `${durationHours} h ${String(durationMinutes).padStart(2, "0")} min ${String(durationSeconds).padStart(2, "0")} s`;
+      const timeMatch = String(time || "").match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      if (timeMatch) {
+        const startSeconds = Number(timeMatch[1]) * 3600 + Number(timeMatch[2]) * 60 + Number(timeMatch[3] || 0);
+        const finishSeconds = startSeconds + totalSeconds;
+        const days = Math.floor(finishSeconds / 86400);
+        const secondOfDay = finishSeconds % 86400;
+        const finishTime = `${String(Math.floor(secondOfDay / 3600)).padStart(2, "0")}:${String(Math.floor((secondOfDay % 3600) / 60)).padStart(2, "0")}:${String(secondOfDay % 60).padStart(2, "0")}`;
+        calculatedEstimatedEnd = `${finishTime}${days === 1 ? " · mañana" : days > 1 ? ` · en ${days} días` : ""}`;
+      }
     }
 
     const flowText = [
@@ -33,8 +53,8 @@ module.exports = async function handler(request, response) {
       `🛢️ Producto: ${clean(product) || "Sin registrar"}`,
       `🏭 Tanque: ${clean(tank) || "Sin registrar"}`,
       `⏳ Falta por recibir: ${Math.round(Number(remaining) || 0).toLocaleString("es-EC")} BBL`,
-      `⌛ Tiempo restante: ${clean(timeRemaining) || "Sin caudal disponible"}`,
-      `🏁 Finalización estimada: ${clean(estimatedEnd) || "Sin caudal disponible"}`
+      `⌛ Tiempo restante: ${calculatedRemainingTime || "Sin caudal disponible"}`,
+      `🏁 Finalización estimada: ${calculatedEstimatedEnd || "Sin caudal disponible"}`
     ].join("\n");
 
     return sendTelegram(botToken, chatId, flowText, response);

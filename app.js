@@ -8,9 +8,10 @@ function elapsedHours(a,b){const m=v=>{const[h,x]=v.split(":").map(Number);retur
 function addOneHour(t){const[h,m]=t.split(":").map(Number);return`${String((h+1)%24).padStart(2,"0")}:${String(m).padStart(2,"0")}`}
 function estimatedFinish(startTime,hours){
   if(!startTime||!Number.isFinite(hours)||hours<=0)return{time:"—",label:"Sin caudal disponible"};
-  const[h,m]=startTime.split(":").map(Number),added=Math.round(hours*60),total=h*60+m+added,days=Math.floor(total/1440),minutes=total%1440,time=`${String(Math.floor(minutes/60)).padStart(2,"0")}:${String(minutes%60).padStart(2,"0")}`;
+  const parts=startTime.split(":").map(Number),h=parts[0]||0,m=parts[1]||0,s=parts[2]||0,added=Math.round(hours*3600),total=h*3600+m*60+s+added,days=Math.floor(total/86400),seconds=total%86400,time=`${String(Math.floor(seconds/3600)).padStart(2,"0")}:${String(Math.floor((seconds%3600)/60)).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
   return{time,label:`${time}${days===1?" · mañana":days>1?` · en ${days} días`:""}`};
 }
+function durationText(hours){const totalSeconds=Math.round(hours*3600),h=Math.floor(totalSeconds/3600),m=Math.floor((totalSeconds%3600)/60),s=totalSeconds%60;return`${h} h ${String(m).padStart(2,"0")} min ${String(s).padStart(2,"0")} s`}
 function applyTransferredVolume(volume){
   if(volume<=0||!rows.length)return 0;
   rows.at(-1).sent=safeNumber(rows.at(-1).sent)+volume;
@@ -46,7 +47,7 @@ async function checkTelegramAlert(normalized){
 
 async function publishTelegramFlow({flowBph,time,batchEquivalent,tank,product,sent,received,remaining}){
   try{
-    const hours=flowBph>0?remaining/flowBph:0,finish=estimatedFinish(time,hours),timeRemaining=flowBph>0?`${Math.floor(Math.round(hours*60)/60)} h ${String(Math.round(hours*60)%60).padStart(2,"0")} min`:"Sin caudal disponible";
+    const hours=flowBph>0?remaining/flowBph:0,finish=estimatedFinish(time,hours),timeRemaining=flowBph>0?durationText(hours):"Sin caudal disponible";
     const response=await fetch("/api/telegram-alert",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"flow",flow:Math.round(flowBph),time,batch:batchEquivalent||"Sin número",tank:`TP-${String(tank).padStart(2,"0")}`,product,sent,received,remaining,timeRemaining,estimatedEnd:finish.label})});
     if(!response.ok)throw new Error("No se pudo publicar el caudal");
   }catch(error){console.warn("Publicación de caudal en Telegram pendiente:",error.message)}
@@ -82,12 +83,12 @@ function calculations(){const normalized=rows.map((r,index)=>({...r,index,remain
 function input(value,field,index,type="text"){const numeric=type==="number";return`<input type="text" ${numeric?'inputmode="decimal" data-numeric="true"':''} value="${String(value).replaceAll('"','&quot;')}" data-index="${index}" data-field="${field}" aria-label="${field} fila ${index+1}">`}
 
 function renderForecast(){
-  const first=calculations().normalized[0],remaining=first?.remaining||0,hours=forecastFlow>0?remaining/forecastFlow:0,totalMinutes=Math.round(hours*60),startTime=$("#tankTime")?.value||new Date().toTimeString().slice(0,5),finish=estimatedFinish(startTime,hours);
+  const first=calculations().normalized[0],remaining=first?.remaining||0,hours=forecastFlow>0?remaining/forecastFlow:0,selectedTank=$("#tankSelect")?.value,lastTankRecord=[...tankRecords].reverse().find(record=>record.tank===selectedTank),startTime=lastTankRecord?.time||$("#tankTime")?.value||new Date().toTimeString().slice(0,8),finish=estimatedFinish(startTime,hours);
   $("#firstBatchName").textContent=first?`Partida ${first.batch||"—"} · ${first.product||"Sin producto"}`:"No existen partidas";
   if(document.activeElement!==$("#firstBatchRemainingInput"))$("#firstBatchRemainingInput").value=Math.round(remaining);
   if(document.activeElement!==$("#forecastFlowInput"))$("#forecastFlowInput").value=Math.round(forecastFlow);
-  if(document.activeElement!==$("#forecastHoursInput"))$("#forecastHoursInput").value=hours?hours.toFixed(2):0;
-  $("#forecastTimeDisplay").textContent=forecastFlow>0?`${Math.floor(totalMinutes/60)} h ${String(totalMinutes%60).padStart(2,"0")} min`:"Sin caudal disponible";
+  if(document.activeElement!==$("#forecastHoursInput"))$("#forecastHoursInput").value=hours?hours.toFixed(3):0;
+  $("#forecastTimeDisplay").textContent=forecastFlow>0?durationText(hours):"Sin caudal disponible";
   $("#forecastFinishDisplay").textContent=forecastFlow>0?finish.label:"Sin caudal disponible";
   $("#currentCalculatedFlow").innerHTML=`${fmt(forecastFlow)} <small>BBL/H</small>`;
 }
