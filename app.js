@@ -1,5 +1,6 @@
 const PIPE_KM=127,COLORS=["#bdff4a","#24d6d1","#ffb84d","#bda7ff","#ff7b68","#62a8ff","#f279c6","#85d37d","#ffd966"];
 const initialRows=[{batch:"126",product:"JET A1",sent:7367,received:1608},{batch:"127",product:"DESTILADO",sent:101,received:0},{batch:"128",product:"DIESEL OIL",sent:36850,received:0}];
+const PRODUCTS=["JET A1","DIESEL OIL","DIESEL PREMIUM","DESTILADO","GASOLINA EXTRA","GASOLINA ECOPAÍS","GASOLINA SÚPER","NAFTA RON 80","NAFTA RON 95","PREMIUM IMP"];
 let rows=structuredClone(initialRows),tankRecords=[],forecastFlow=0,flowManuallyEdited=false,accumulationResetIndex=0,editingTankRecordIndex=null;
 let operationStatus={status:"running",since:null,reason:""},operationHistory=[],telegramAlertsSent=[],syncReady=false,syncSaveTimer=null,lastRemoteUpdate=null;
 const $=s=>document.querySelector(s),safeNumber=v=>Math.max(0,Number(v)||0),fmt=(n,d=0)=>new Intl.NumberFormat("es-EC",{maximumFractionDigits:d,minimumFractionDigits:d}).format(n);
@@ -81,6 +82,7 @@ async function loadSharedState(showStatus=true){
 
 function calculations(){const normalized=rows.map((r,index)=>({...r,index,remaining:Math.max(0,safeNumber(r.sent)-safeNumber(r.received))})),total=normalized.reduce((s,r)=>s+r.remaining,0);let cursor=0;const segments=[...normalized].reverse().map(r=>{const length=total?r.remaining/total*PIPE_KM:0,result={...r,start:cursor,end:cursor+length,length,percent:total?r.remaining/total*100:0};cursor+=length;return result});return{normalized,segments,total}}
 function input(value,field,index,type="text"){const numeric=type==="number";return`<input type="text" ${numeric?'inputmode="decimal" data-numeric="true"':''} value="${String(value).replaceAll('"','&quot;')}" data-index="${index}" data-field="${field}" aria-label="${field} fila ${index+1}">`}
+function productSelect(value,index){const current=String(value||"").toUpperCase(),options=PRODUCTS.includes(current)?PRODUCTS:[current,...PRODUCTS].filter(Boolean);return`<select class="product-select" data-index="${index}" data-field="product" aria-label="Producto fila ${index+1}">${options.map(product=>`<option value="${product}"${product===current?" selected":""}>${product}</option>`).join("")}</select>`}
 
 function renderForecast(){
   const first=calculations().normalized[0],remaining=first?.remaining||0,hours=forecastFlow>0?remaining/forecastFlow:0,selectedTank=$("#tankSelect")?.value,lastTankRecord=[...tankRecords].reverse().find(record=>record.tank===selectedTank),startTime=lastTankRecord?.time||$("#tankTime")?.value||new Date().toTimeString().slice(0,8),finish=estimatedFinish(startTime,hours);
@@ -102,14 +104,14 @@ function renderOperationStatus(){
 
 function render(){
   const{normalized,segments,total}=calculations();checkTelegramAlert(normalized);
-  $("#productRows").innerHTML=normalized.map((r,i)=>`<tr><td>${input(r.batch,"batch",i)}</td><td>${input(r.product,"product",i)}</td><td>${input(r.sent,"sent",i,"number")}</td><td>${input(r.received,"received",i,"number")}</td><td class="calculated">${fmt(r.remaining)}</td><td><button class="remove" data-remove="${i}" aria-label="Eliminar fila">×</button></td></tr>`).join("");
+  $("#productRows").innerHTML=normalized.map((r,i)=>`<tr><td>${input(r.batch,"batch",i)}</td><td>${productSelect(r.product,i)}</td><td>${input(r.sent,"sent",i,"number")}</td><td>${input(r.received,"received",i,"number")}</td><td class="calculated">${fmt(r.remaining)}</td><td><button class="remove" data-remove="${i}" aria-label="Eliminar fila">×</button></td></tr>`).join("");
   $("#totalVolume").innerHTML=`${fmt(total)} <small>u</small>`;$("#activeProducts").textContent=normalized.filter(r=>r.remaining>0).length;$("#occupancy").innerHTML=`${total>0?"100":"0"} <small>%</small>`;$("#emptyState").hidden=total>0;
   const active=segments.filter(r=>r.remaining>0);$("#pipeline").innerHTML=active.map(r=>`<div class="pipe-segment" style="width:${r.percent}%;background:${COLORS[r.index%COLORS.length]}" title="${r.product}: km ${fmt(r.start,2)} a ${fmt(r.end,2)}"><span>${r.percent>=8?r.product:""}</span></div>`).join("");
   $("#segmentList").innerHTML=active.length?[...active].reverse().map(r=>`<div class="segment-row"><span class="dot" style="background:${COLORS[r.index%COLORS.length]}"></span><div class="segment-info"><strong>${r.product||"Sin nombre"}</strong><small>Partida ${r.batch||"—"} · ${fmt(r.percent,2)}% del ducto</small></div><div class="segment-km">${fmt(r.start,2)} → ${fmt(r.end,2)} km<small>Longitud: ${fmt(r.length,2)} km</small></div></div>`).join(""):"";renderTankModule();renderForecast();renderOperationStatus();
 }
 
-document.addEventListener("input",e=>{scheduleStateSave();const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset,position=el.selectionStart;rows[Number(index)][field]=el.value;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();replacement?.setSelectionRange(position,position)});
-document.addEventListener("change",scheduleStateSave);
+document.addEventListener("input",e=>{if(e.target.matches('input[type="text"],textarea')&&!e.target.hasAttribute("data-numeric"))e.target.value=e.target.value.toUpperCase();scheduleStateSave();const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset,position=el.selectionStart;rows[Number(index)][field]=field==="product"?el.value.toUpperCase():el.value;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();if(typeof position==="number")replacement?.setSelectionRange(position,position)});
+document.addEventListener("change",e=>{const el=e.target.closest("[data-field]");if(el){const{index,field}=el.dataset;rows[Number(index)][field]=field==="product"?el.value.toUpperCase():el.value;render()}scheduleStateSave()});
 document.addEventListener("click",e=>{
   const remove=e.target.closest("[data-remove]");if(remove){rows.splice(Number(remove.dataset.remove),1);render()}
   const edit=e.target.closest("[data-edit-tank-record]");if(edit){editingTankRecordIndex=Number(edit.dataset.editTankRecord);renderTankModule()}
@@ -117,16 +119,16 @@ document.addEventListener("click",e=>{
   const save=e.target.closest("[data-save-tank-record]");
   if(save){
     const index=Number(save.dataset.saveTankRecord),record=tankRecords[index],read=field=>document.querySelector(`[data-tank-edit="${field}"]`)?.value??"",number=field=>safeNumber(String(read(field)).replace(",",".")),tank=String(read("tank")).replace(/[^0-9]/g,"");
-    if(record){Object.assign(record,{time:read("time")||record.time,batchEquivalent:read("batchEquivalent").trim(),tank:tank||record.tank,levelM:number("levelM"),gallons:number("gallons"),receivedBbl:number("receivedBbl"),flowBph:number("flowBph"),accumulatedBbl:number("accumulatedBbl")});record.barrels=record.gallons/42;if(index===tankRecords.length-1){forecastFlow=record.flowBph;flowManuallyEdited=false}}
+    if(record){Object.assign(record,{time:read("time")||record.time,batchEquivalent:read("batchEquivalent").trim().toUpperCase(),tank:tank||record.tank,levelM:number("levelM"),gallons:number("gallons"),receivedBbl:number("receivedBbl"),flowBph:number("flowBph"),accumulatedBbl:number("accumulatedBbl")});record.barrels=record.gallons/42;if(index===tankRecords.length-1){forecastFlow=record.flowBph;flowManuallyEdited=false}}
     editingTankRecordIndex=null;render();$("#tankMessage").textContent="Registro corregido y guardado. No se envió un nuevo mensaje a Telegram.";$("#tankMessage").className="transfer-message success";
   }
   setTimeout(scheduleStateSave);
 });
-$("#addRow").addEventListener("click",()=>{rows.push({batch:"",product:"NUEVO PRODUCTO",sent:0,received:0});render()});
+$("#addRow").addEventListener("click",()=>{rows.push({batch:"",product:PRODUCTS[0],sent:0,received:0});render()});
 function resetLevelFields(prefix){["Meters","Centimeters","Millimeters"].forEach(part=>{$(`#${prefix?`${prefix}Level${part}`:`level${part}`}`).value=0});renderTankModule()}
 $("#resetInitialLevel").addEventListener("click",()=>{resetLevelFields("initial");$("#tankMessage").textContent="Nivel inicial reiniciado. El historial y el acumulado se conservaron.";$("#tankMessage").className="transfer-message success"});
 $("#resetCurrentLevel").addEventListener("click",()=>{resetLevelFields("");$("#tankMessage").textContent="Nivel actual reiniciado. El historial y el acumulado se conservaron.";$("#tankMessage").className="transfer-message success"});
-$("#finishBatch").addEventListener("click",()=>{accumulationResetIndex=tankRecords.length;$("#initialTankAccumulated").value=0;["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);const start=$("#tankTime").value;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#batchEquivalentInput").value=rows[0]?.batch||"";render();$("#tankMessage").textContent="Fin de partida registrado. Acumulado y niveles en cero; el histórico anterior se conserva.";$("#tankMessage").className="transfer-message success"});
+$("#finishBatch").addEventListener("click",()=>{accumulationResetIndex=tankRecords.length;$("#initialTankAccumulated").value=0;["Meters","Centimeters","Millimeters"].forEach(part=>{$(`#initialLevel${part}`).value=$(`#level${part}`).value});const start=$("#tankTime").value;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#batchEquivalentInput").value=rows[0]?.batch||"";forecastFlow=0;flowManuallyEdited=false;render();$("#tankMessage").textContent="Fin de partida registrado. El acumulado inició en cero y el nivel actual quedó como nueva referencia; el histórico anterior se conserva.";$("#tankMessage").className="transfer-message success"});
 function setLevelFields(prefix,levelM){const totalMm=Math.max(0,Math.round(safeNumber(levelM)*1000)),meters=Math.floor(totalMm/1000),centimeters=Math.floor((totalMm%1000)/10),millimeters=totalMm%10;$("#"+(prefix?`${prefix}LevelMeters`:"levelMeters")).value=meters;$("#"+(prefix?`${prefix}LevelCentimeters`:"levelCentimeters")).value=centimeters;$("#"+(prefix?`${prefix}LevelMillimeters`:"levelMillimeters")).value=millimeters}
 $("#tankSelect").addEventListener("change",()=>{
   const tank=$("#tankSelect").value,lastForTank=[...tankRecords].reverse().find(record=>record.tank===tank);forecastFlow=0;flowManuallyEdited=false;
