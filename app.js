@@ -1,9 +1,9 @@
 const PIPE_KM=127,COLORS=["#bdff4a","#24d6d1","#ffb84d","#bda7ff","#ff7b68","#62a8ff","#f279c6","#85d37d","#ffd966"];
 const initialRows=[{batch:"126",product:"JET A1",sent:7367,received:1608},{batch:"127",product:"DESTILADO",sent:101,received:0},{batch:"128",product:"DIESEL OIL",sent:36850,received:0}];
-const PRODUCTS=["JET A1","DIESEL OIL","DIESEL PREMIUM","DESTILADO","GASOLINA EXTRA","GASOLINA ECOPAÍS","GASOLINA SÚPER","NAFTA RON 80","NAFTA RON 95","PREMIUM IMP"];
+const PRODUCTS=["JET A1","DIESEL OIL","DIESEL PREMIUM","DESTILADO","GASOLINA EXTRA","GASOLINA ECOPAÍS","GASOLINA SÚPER","NAFTA RON 80","NAFTA RON 95","PREMIUM IMP","PREMEZCLA","GASOLINA BASE LIB","GASOLINA BASE ESM"];
 let rows=structuredClone(initialRows),tankRecords=[],forecastFlow=0,flowManuallyEdited=false,accumulationResetIndex=0,editingTankRecordIndex=null;
 let operationStatus={status:"running",since:null,reason:""},operationHistory=[],telegramAlertsSent=[],syncReady=false,syncSaveTimer=null,lastRemoteUpdate=null;
-const $=s=>document.querySelector(s),safeNumber=v=>Math.max(0,Number(v)||0),fmt=(n,d=0)=>new Intl.NumberFormat("es-EC",{maximumFractionDigits:d,minimumFractionDigits:d}).format(n);
+const $=s=>document.querySelector(s),parseNumber=v=>{if(typeof v==="number")return v;const text=String(v??"").trim().replace(/\s/g,"");if(!text)return 0;if(text.includes(","))return Number(text.replace(/\./g,"").replace(",","."));if(/^\d{1,3}(\.\d{3})+$/.test(text))return Number(text.replace(/\./g,""));return Number(text)},safeNumber=v=>Math.max(0,parseNumber(v)||0),fmt=(n,d=0)=>new Intl.NumberFormat("es-EC",{maximumFractionDigits:d,minimumFractionDigits:d}).format(n);
 
 function elapsedHours(a,b){const m=v=>{const[h,x]=v.split(":").map(Number);return h*60+x};let d=m(b)-m(a);if(d<=0)d+=1440;return d/60}
 function addOneHour(t){const[h,m]=t.split(":").map(Number);return`${String((h+1)%24).padStart(2,"0")}:${String(m).padStart(2,"0")}`}
@@ -81,7 +81,7 @@ async function loadSharedState(showStatus=true){
 }
 
 function calculations(){const normalized=rows.map((r,index)=>({...r,index,remaining:Math.max(0,safeNumber(r.sent)-safeNumber(r.received))})),total=normalized.reduce((s,r)=>s+r.remaining,0);let cursor=0;const segments=[...normalized].reverse().map(r=>{const length=total?r.remaining/total*PIPE_KM:0,result={...r,start:cursor,end:cursor+length,length,percent:total?r.remaining/total*100:0};cursor+=length;return result});return{normalized,segments,total}}
-function input(value,field,index,type="text"){const numeric=type==="number";return`<input type="text" ${numeric?'inputmode="decimal" data-numeric="true"':''} value="${String(value).replaceAll('"','&quot;')}" data-index="${index}" data-field="${field}" aria-label="${field} fila ${index+1}">`}
+function input(value,field,index,type="text"){const numeric=type==="number",shown=numeric?fmt(safeNumber(value)):String(value);return`<input type="text" ${numeric?'inputmode="numeric" data-numeric="true"':''} value="${shown.replaceAll('"','&quot;')}" data-index="${index}" data-field="${field}" aria-label="${field} fila ${index+1}">`}
 function productSelect(value,index){const current=String(value||"").toUpperCase(),options=PRODUCTS.includes(current)?PRODUCTS:[current,...PRODUCTS].filter(Boolean);return`<select class="product-select" data-index="${index}" data-field="product" aria-label="Producto fila ${index+1}">${options.map(product=>`<option value="${product}"${product===current?" selected":""}>${product}</option>`).join("")}</select>`}
 
 function renderForecast(){
@@ -110,7 +110,7 @@ function render(){
   $("#segmentList").innerHTML=active.length?[...active].reverse().map(r=>`<div class="segment-row"><span class="dot" style="background:${COLORS[r.index%COLORS.length]}"></span><div class="segment-info"><strong>${r.product||"Sin nombre"}</strong><small>Partida ${r.batch||"—"} · ${fmt(r.percent,2)}% del ducto</small></div><div class="segment-km">${fmt(r.start,2)} → ${fmt(r.end,2)} km<small>Longitud: ${fmt(r.length,2)} km</small></div></div>`).join(""):"";renderTankModule();renderForecast();renderOperationStatus();
 }
 
-document.addEventListener("input",e=>{if(e.target.matches('input[type="text"],textarea')&&!e.target.hasAttribute("data-numeric"))e.target.value=e.target.value.toUpperCase();scheduleStateSave();const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset,position=el.selectionStart;rows[Number(index)][field]=field==="product"?el.value.toUpperCase():el.value;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();if(typeof position==="number")replacement?.setSelectionRange(position,position)});
+document.addEventListener("input",e=>{if(e.target.matches('input[type="text"],textarea')&&!e.target.hasAttribute("data-numeric"))e.target.value=e.target.value.toUpperCase();scheduleStateSave();const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset,position=el.selectionStart;rows[Number(index)][field]=field==="product"?el.value.toUpperCase():el.value;if(el.hasAttribute("data-numeric"))return;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();if(typeof position==="number")replacement?.setSelectionRange(position,position)});
 document.addEventListener("change",e=>{const el=e.target.closest("[data-field]");if(el){const{index,field}=el.dataset;rows[Number(index)][field]=field==="product"?el.value.toUpperCase():el.value;render()}scheduleStateSave()});
 document.addEventListener("click",e=>{
   const remove=e.target.closest("[data-remove]");if(remove){rows.splice(Number(remove.dataset.remove),1);render()}
@@ -118,7 +118,7 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-cancel-tank-edit]")){editingTankRecordIndex=null;renderTankModule()}
   const save=e.target.closest("[data-save-tank-record]");
   if(save){
-    const index=Number(save.dataset.saveTankRecord),record=tankRecords[index],read=field=>document.querySelector(`[data-tank-edit="${field}"]`)?.value??"",number=field=>safeNumber(String(read(field)).replace(",",".")),tank=String(read("tank")).replace(/[^0-9]/g,"");
+    const index=Number(save.dataset.saveTankRecord),record=tankRecords[index],read=field=>document.querySelector(`[data-tank-edit="${field}"]`)?.value??"",number=field=>safeNumber(read(field)),tank=String(read("tank")).replace(/[^0-9]/g,"");
     if(record){Object.assign(record,{time:read("time")||record.time,batchEquivalent:read("batchEquivalent").trim().toUpperCase(),tank:tank||record.tank,levelM:number("levelM"),gallons:number("gallons"),receivedBbl:number("receivedBbl"),flowBph:number("flowBph"),accumulatedBbl:number("accumulatedBbl")});record.barrels=record.gallons/42;if(index===tankRecords.length-1){forecastFlow=record.flowBph;flowManuallyEdited=false}}
     editingTankRecordIndex=null;render();$("#tankMessage").textContent="Registro corregido y guardado. No se envió un nuevo mensaje a Telegram.";$("#tankMessage").className="transfer-message success";
   }
