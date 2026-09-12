@@ -1,6 +1,6 @@
 const PIPE_KM=127,COLORS=["#bdff4a","#24d6d1","#ffb84d","#bda7ff","#ff7b68","#62a8ff","#f279c6","#85d37d","#ffd966"];
 const initialRows=[{batch:"126",product:"JET A1",sent:7367,received:1608},{batch:"127",product:"DESTILADO",sent:101,received:0},{batch:"128",product:"DIESEL OIL",sent:36850,received:0}];
-let rows=structuredClone(initialRows),tankRecords=[],forecastFlow=0,flowManuallyEdited=false,accumulationResetIndex=0;
+let rows=structuredClone(initialRows),tankRecords=[],forecastFlow=0,flowManuallyEdited=false,accumulationResetIndex=0,editingTankRecordIndex=null;
 let operationStatus={status:"running",since:null,reason:""},operationHistory=[],telegramAlertsSent=[],syncReady=false,syncSaveTimer=null,lastRemoteUpdate=null;
 const $=s=>document.querySelector(s),safeNumber=v=>Math.max(0,Number(v)||0),fmt=(n,d=0)=>new Intl.NumberFormat("es-EC",{maximumFractionDigits:d,minimumFractionDigits:d}).format(n);
 
@@ -34,7 +34,7 @@ function renderTankModule(){
   if(!$("#tankSelect"))return;
   const calc=tankCalculation(),base=tankCalculation("initial"),initial=safeNumber($("#initialTankAccumulated")?.value),accumulated=initial+tankRecords.slice(accumulationResetIndex).reduce((s,r)=>s+r.receivedBbl,0),last=[...tankRecords].reverse().find(r=>r.tank===$("#tankSelect").value),received=calc.valid&&base.valid?Math.round(Math.max(0,calc.gallons-base.gallons)/42):0,hours=$("#initialTankTime")?.value&&$("#tankTime")?.value?elapsedHours($("#initialTankTime").value,$("#tankTime").value):0,flow=hours?Math.round(received/hours):0,shownReceived=received>0?received:(last?.receivedBbl||0);
   $("#tankAccumulatedDisplay").innerHTML=`${fmt(accumulated)} <small>BBL</small>`;$("#tankReceivedDisplay").innerHTML=`${fmt(shownReceived)} <small>BBL</small>`;$("#tankFlowDisplay").innerHTML=`${fmt(flow)} <small>BBL/H</small>`;$("#currentCalculatedFlow").innerHTML=`${fmt(last?.flowBph||0)} <small>BBL/H</small>`;$("#tankHistoryEmpty").hidden=tankRecords.length>0;
-  $("#tankHistory").innerHTML=tankRecords.map(r=>`<tr><td>${r.time.replace(":","h")}</td><td>${r.batchEquivalent||"—"}</td><td>TP-${r.tank.padStart(2,"0")}</td><td>${fmt(r.levelM,3)} m</td><td>${fmt(r.gallons)} GLS</td><td>${fmt(r.receivedBbl)} BBL</td><td>${fmt(r.flowBph)} BBL/H</td><td>${fmt(r.accumulatedBbl)} BBL</td></tr>`).join("");
+  $("#tankHistory").innerHTML=tankRecords.map((r,index)=>editingTankRecordIndex===index?`<tr class="tank-edit-row"><td><input data-tank-edit="time" type="time" value="${r.time||""}"></td><td><input data-tank-edit="batchEquivalent" value="${r.batchEquivalent||""}"></td><td><input data-tank-edit="tank" value="${r.tank||""}"></td><td><input data-tank-edit="levelM" inputmode="decimal" value="${r.levelM}"></td><td><input data-tank-edit="gallons" inputmode="decimal" value="${r.gallons}"></td><td><input data-tank-edit="receivedBbl" inputmode="decimal" value="${r.receivedBbl}"></td><td><input data-tank-edit="flowBph" inputmode="decimal" value="${r.flowBph}"></td><td><input data-tank-edit="accumulatedBbl" inputmode="decimal" value="${r.accumulatedBbl}"></td><td class="tank-row-actions"><button class="history-action save" data-save-tank-record="${index}" type="button">Guardar</button><button class="history-action" data-cancel-tank-edit type="button">Cancelar</button></td></tr>`:`<tr><td>${String(r.time||"").replace(":","h")}</td><td>${r.batchEquivalent||"—"}</td><td>TP-${String(r.tank||"").padStart(2,"0")}</td><td>${fmt(r.levelM,3)} m</td><td>${fmt(r.gallons)} GLS</td><td>${fmt(r.receivedBbl)} BBL</td><td>${fmt(r.flowBph)} BBL/H</td><td>${fmt(r.accumulatedBbl)} BBL</td><td><button class="history-action" data-edit-tank-record="${index}" type="button">Editar</button></td></tr>`).join("");
   if(!calc.valid){$("#tankLevelDisplay").textContent="Fuera de rango";$("#tankGallonsDisplay").innerHTML="— <small>GLS</small>";$("#tankReceivedDisplay").innerHTML="— <small>BBL</small>";$("#tankFlowDisplay").innerHTML="— <small>BBL/H</small>";$("#tankMessage").textContent=calc.message;$("#tankMessage").className="transfer-message";return}
   $("#tankLevelDisplay").textContent=`${fmt(calc.levelM,3)} m`;$("#tankGallonsDisplay").innerHTML=`${fmt(calc.gallons)} <small>GLS</small>`;$("#tankMessage").textContent=calc.message;
 }
@@ -110,7 +110,18 @@ function render(){
 
 document.addEventListener("input",e=>{scheduleStateSave();const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset,position=el.selectionStart;rows[Number(index)][field]=el.value;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();replacement?.setSelectionRange(position,position)});
 document.addEventListener("change",scheduleStateSave);
-document.addEventListener("click",e=>{const remove=e.target.closest("[data-remove]");if(remove){rows.splice(Number(remove.dataset.remove),1);render()}setTimeout(scheduleStateSave)});
+document.addEventListener("click",e=>{
+  const remove=e.target.closest("[data-remove]");if(remove){rows.splice(Number(remove.dataset.remove),1);render()}
+  const edit=e.target.closest("[data-edit-tank-record]");if(edit){editingTankRecordIndex=Number(edit.dataset.editTankRecord);renderTankModule()}
+  if(e.target.closest("[data-cancel-tank-edit]")){editingTankRecordIndex=null;renderTankModule()}
+  const save=e.target.closest("[data-save-tank-record]");
+  if(save){
+    const index=Number(save.dataset.saveTankRecord),record=tankRecords[index],read=field=>document.querySelector(`[data-tank-edit="${field}"]`)?.value??"",number=field=>safeNumber(String(read(field)).replace(",",".")),tank=String(read("tank")).replace(/[^0-9]/g,"");
+    if(record){Object.assign(record,{time:read("time")||record.time,batchEquivalent:read("batchEquivalent").trim(),tank:tank||record.tank,levelM:number("levelM"),gallons:number("gallons"),receivedBbl:number("receivedBbl"),flowBph:number("flowBph"),accumulatedBbl:number("accumulatedBbl")});record.barrels=record.gallons/42;if(index===tankRecords.length-1){forecastFlow=record.flowBph;flowManuallyEdited=false}}
+    editingTankRecordIndex=null;render();$("#tankMessage").textContent="Registro corregido y guardado. No se envió un nuevo mensaje a Telegram.";$("#tankMessage").className="transfer-message success";
+  }
+  setTimeout(scheduleStateSave);
+});
 $("#addRow").addEventListener("click",()=>{rows.push({batch:"",product:"NUEVO PRODUCTO",sent:0,received:0});render()});
 function resetLevelFields(prefix){["Meters","Centimeters","Millimeters"].forEach(part=>{$(`#${prefix?`${prefix}Level${part}`:`level${part}`}`).value=0});renderTankModule()}
 $("#resetInitialLevel").addEventListener("click",()=>{resetLevelFields("initial");$("#tankMessage").textContent="Nivel inicial reiniciado. El historial y el acumulado se conservaron.";$("#tankMessage").className="transfer-message success"});
