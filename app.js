@@ -3,7 +3,9 @@ const initialRows=[{batch:"126",product:"JET A1",sent:7367,received:1608},{batch
 const PRODUCTS=["JET A1","DIESEL OIL","DIESEL PREMIUM","DESTILADO","GASOLINA EXTRA","GASOLINA ECOPAÍS","GASOLINA SÚPER","NAFTA RON 80","NAFTA RON 95","PREMIUM IMP","PREMEZCLA","GASOLINA BASE LIB","GASOLINA BASE ESM"];
 let rows=structuredClone(initialRows),tankRecords=[],forecastFlow=0,flowManuallyEdited=false,accumulationResetIndex=0,editingTankRecordIndex=null;
 let operationStatus={status:"running",since:null,reason:""},operationHistory=[],telegramAlertsSent=[],syncReady=false,syncSaveTimer=null,lastRemoteUpdate=null;
+let alarms=[],editingAlarmId=null;
 const $=s=>document.querySelector(s),parseNumber=v=>{if(typeof v==="number")return v;const text=String(v??"").trim().replace(/\s/g,"");if(!text)return 0;if(text.includes(","))return Number(text.replace(/\./g,"").replace(",","."));if(/^\d{1,3}(\.\d{3})+$/.test(text))return Number(text.replace(/\./g,""));return Number(text)},safeNumber=v=>Math.max(0,parseNumber(v)||0),fmt=(n,d=0)=>new Intl.NumberFormat("es-EC",{maximumFractionDigits:d,minimumFractionDigits:d}).format(n);
+const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 
 function elapsedHours(a,b){const m=v=>{const[h,x]=v.split(":").map(Number);return h*60+x};let d=m(b)-m(a);if(d<=0)d+=1440;return d/60}
 function addOneHour(t){const[h,m]=t.split(":").map(Number);return`${String((h+1)%24).padStart(2,"0")}:${String(m).padStart(2,"0")}`}
@@ -60,11 +62,12 @@ async function publishOperationStatus(payload){
 }
 
 const persistedFieldIds=["tankSelect","batchEquivalentInput","initialTankAccumulated","initialTankTime","tankTime","initialLevelMeters","initialLevelCentimeters","initialLevelMillimeters","levelMeters","levelCentimeters","levelMillimeters","stopReason","operationTime","operationObservation"];
-function captureState(){const fields={};persistedFieldIds.forEach(id=>{const element=document.getElementById(id);if(element)fields[id]=element.value});return{version:1,rows,tankRecords,forecastFlow,flowManuallyEdited,accumulationResetIndex,operationStatus,operationHistory,telegramAlertsSent,fields}}
+function captureState(){const fields={};persistedFieldIds.forEach(id=>{const element=document.getElementById(id);if(element)fields[id]=element.value});return{version:1,rows,tankRecords,forecastFlow,flowManuallyEdited,accumulationResetIndex,operationStatus,operationHistory,telegramAlertsSent,alarms,fields}}
 function applySharedState(state){
   if(!state||typeof state!=="object"||!Object.keys(state).length)return false;
   if(Array.isArray(state.rows))rows=state.rows.slice(0,100);if(Array.isArray(state.tankRecords))tankRecords=state.tankRecords.slice(-2000);forecastFlow=safeNumber(state.forecastFlow);flowManuallyEdited=Boolean(state.flowManuallyEdited);accumulationResetIndex=Math.min(tankRecords.length,Math.max(0,Number(state.accumulationResetIndex)||0));
   if(state.operationStatus&&typeof state.operationStatus==="object")operationStatus=state.operationStatus;if(Array.isArray(state.operationHistory))operationHistory=state.operationHistory.slice(-500);if(Array.isArray(state.telegramAlertsSent))telegramAlertsSent=state.telegramAlertsSent.slice(-500);
+  if(Array.isArray(state.alarms))alarms=state.alarms.slice(-500);
   Object.entries(state.fields||{}).forEach(([id,value])=>{const element=document.getElementById(id);if(element)element.value=value});return true;
 }
 function setSyncStatus(text){const element=$("#syncStatus");if(element)element.textContent=text}
@@ -102,12 +105,17 @@ function renderOperationStatus(){
   $("#operationHistory").innerHTML=[...operationHistory].reverse().map(event=>`<div class="operation-event"><strong>${event.status==="stopped"?"⏸ Paralización":"▶ Reinicio"}</strong><span>${event.time?.replace(":","h")||"—"}</span><div>${event.status==="stopped"?(event.reason||"Sin motivo"):(event.duration?`Tiempo detenido: ${event.duration}`:"Operación restablecida")}${event.observation?`<small>${event.observation}</small>`:""}</div></div>`).join("");
 }
 
+function renderAlarms(){
+  const list=$("#alarmList"),empty=$("#alarmEmpty");if(!list||!empty)return;empty.hidden=alarms.length>0;
+  list.innerHTML=[...alarms].sort((a,b)=>`${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`)).map(alarm=>`<div class="alarm-item"><div class="alarm-icon">⏰</div><div><strong>${escapeHtml(alarm.date||"—")} · ${escapeHtml(alarm.time||"—")}</strong><p>${escapeHtml(alarm.message||"SIN MENSAJE")}</p><small class="alarm-${alarm.status||"pending"}">${alarm.status==="sent"?"ENVIADA":alarm.status==="cancelled"?"CANCELADA":"PENDIENTE"}</small></div><div class="alarm-actions">${alarm.status==="pending"?`<button class="history-action" data-edit-alarm="${escapeHtml(alarm.id)}" type="button">Editar</button><button class="history-action alarm-cancel" data-cancel-alarm="${escapeHtml(alarm.id)}" type="button">Cancelar</button>`:""}</div></div>`).join("");
+}
+
 function render(){
   const{normalized,segments,total}=calculations();checkTelegramAlert(normalized);
   $("#productRows").innerHTML=normalized.map((r,i)=>`<tr><td>${input(r.batch,"batch",i)}</td><td>${productSelect(r.product,i)}</td><td>${input(r.sent,"sent",i,"number")}</td><td>${input(r.received,"received",i,"number")}</td><td class="calculated">${fmt(r.remaining)}</td><td><button class="remove" data-remove="${i}" aria-label="Eliminar fila">×</button></td></tr>`).join("");
   $("#totalVolume").innerHTML=`${fmt(total)} <small>u</small>`;$("#activeProducts").textContent=normalized.filter(r=>r.remaining>0).length;$("#occupancy").innerHTML=`${total>0?"100":"0"} <small>%</small>`;$("#emptyState").hidden=total>0;
   const active=segments.filter(r=>r.remaining>0);$("#pipeline").innerHTML=active.map(r=>`<div class="pipe-segment" style="width:${r.percent}%;background:${COLORS[r.index%COLORS.length]}" title="${r.product}: km ${fmt(r.start,2)} a ${fmt(r.end,2)}"><span>${r.percent>=8?r.product:""}</span></div>`).join("");
-  $("#segmentList").innerHTML=active.length?[...active].reverse().map(r=>`<div class="segment-row"><span class="dot" style="background:${COLORS[r.index%COLORS.length]}"></span><div class="segment-info"><strong>${r.product||"Sin nombre"}</strong><small>Partida ${r.batch||"—"} · ${fmt(r.percent,2)}% del ducto</small></div><div class="segment-km">${fmt(r.start,2)} → ${fmt(r.end,2)} km<small>Longitud: ${fmt(r.length,2)} km</small></div></div>`).join(""):"";renderTankModule();renderForecast();renderOperationStatus();
+  $("#segmentList").innerHTML=active.length?[...active].reverse().map(r=>`<div class="segment-row"><span class="dot" style="background:${COLORS[r.index%COLORS.length]}"></span><div class="segment-info"><strong>${r.product||"Sin nombre"}</strong><small>Partida ${r.batch||"—"} · ${fmt(r.percent,2)}% del ducto</small></div><div class="segment-km">${fmt(r.start,2)} → ${fmt(r.end,2)} km<small>Longitud: ${fmt(r.length,2)} km</small></div></div>`).join(""):"";renderTankModule();renderForecast();renderOperationStatus();renderAlarms();
 }
 
 document.addEventListener("input",e=>{if(e.target.matches('input[type="text"],textarea')&&!e.target.hasAttribute("data-numeric"))e.target.value=e.target.value.toUpperCase();scheduleStateSave();const el=e.target.closest("[data-field]");if(!el)return;const{index,field}=el.dataset,position=el.selectionStart;rows[Number(index)][field]=field==="product"?el.value.toUpperCase():el.value;if(el.hasAttribute("data-numeric"))return;render();const replacement=document.querySelector(`[data-index="${index}"][data-field="${field}"]`);replacement?.focus();if(typeof position==="number")replacement?.setSelectionRange(position,position)});
@@ -122,6 +130,8 @@ document.addEventListener("click",e=>{
     if(record){Object.assign(record,{time:read("time")||record.time,batchEquivalent:read("batchEquivalent").trim().toUpperCase(),tank:tank||record.tank,levelM:number("levelM"),gallons:number("gallons"),receivedBbl:number("receivedBbl"),flowBph:number("flowBph"),accumulatedBbl:number("accumulatedBbl")});record.barrels=record.gallons/42;if(index===tankRecords.length-1){forecastFlow=record.flowBph;flowManuallyEdited=false}}
     editingTankRecordIndex=null;render();$("#tankMessage").textContent="Registro corregido y guardado. No se envió un nuevo mensaje a Telegram.";$("#tankMessage").className="transfer-message success";
   }
+  const editAlarm=e.target.closest("[data-edit-alarm]");if(editAlarm){const alarm=alarms.find(item=>item.id===editAlarm.dataset.editAlarm);if(alarm){editingAlarmId=alarm.id;$("#alarmDate").value=alarm.date;$("#alarmTime").value=alarm.time;$("#alarmMessage").value=alarm.message;$("#scheduleAlarm").textContent="Guardar cambios";$("#alarmMessageStatus").textContent="Editando alarma seleccionada."}}
+  const cancelAlarm=e.target.closest("[data-cancel-alarm]");if(cancelAlarm){const alarm=alarms.find(item=>item.id===cancelAlarm.dataset.cancelAlarm);if(alarm){alarm.status="cancelled";alarm.cancelledAt=new Date().toISOString();renderAlarms();$("#alarmMessageStatus").textContent="Alarma cancelada."}}
   setTimeout(scheduleStateSave);
 });
 $("#addRow").addEventListener("click",()=>{rows.push({batch:"",product:PRODUCTS[0],sent:0,received:0});render()});
@@ -149,6 +159,9 @@ $("#resumeOperation").addEventListener("click",()=>{
   const time=$("#operationTime").value,observation=$("#operationObservation").value.trim(),message=$("#operationMessage");if(!time){message.textContent="Seleccione la hora de reinicio.";return}if(operationStatus.status!=="stopped"){message.textContent="El poliducto ya consta en operación.";return}
   const hours=elapsedHours(operationStatus.since,time),minutes=Math.round(hours*60),duration=`${Math.floor(minutes/60)} h ${String(minutes%60).padStart(2,"0")} min`;operationStatus={status:"running",since:time,reason:""};operationHistory.push({status:"running",time,duration,observation,createdAt:new Date().toISOString()});renderOperationStatus();publishOperationStatus({status:"running",time,stoppedDuration:duration,observation});message.textContent="Reinicio de operación registrado y enviado a Telegram.";message.className="transfer-message success";
 });
+$("#scheduleAlarm").addEventListener("click",()=>{const date=$("#alarmDate").value,time=$("#alarmTime").value,message=$("#alarmMessage").value.trim().toUpperCase(),status=$("#alarmMessageStatus");if(!date||!time||!message){status.textContent="Ingrese la fecha, la hora y el mensaje.";return}const timestamp=new Date(`${date}T${time}:00-05:00`);if(!Number.isFinite(timestamp.getTime())){status.textContent="La fecha o la hora no son válidas.";return}if(editingAlarmId){const alarm=alarms.find(item=>item.id===editingAlarmId);if(alarm)Object.assign(alarm,{date,time,message,status:"pending",updatedAt:new Date().toISOString()})}else alarms.push({id:`alarm-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,date,time,message,status:"pending",createdAt:new Date().toISOString()});editingAlarmId=null;$("#scheduleAlarm").textContent="Programar alarma";$("#alarmMessage").value="";renderAlarms();status.textContent="Alarma programada para enviarse a Telegram.";status.className="transfer-message success";scheduleStateSave();setTimeout(checkScheduledAlarms,1800)});
+$("#clearAlarmForm").addEventListener("click",()=>{editingAlarmId=null;$("#alarmDate").value="";$("#alarmTime").value="";$("#alarmMessage").value="";$("#scheduleAlarm").textContent="Programar alarma";$("#alarmMessageStatus").textContent=""});
+async function checkScheduledAlarms(){try{await fetch("/api/alarm-dispatch",{method:"POST"});await loadSharedState(false)}catch(error){console.warn("Verificación de alarmas pendiente")}}
 ["#tankSelect","#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters","#initialTankTime","#tankTime","#initialTankAccumulated"].forEach(s=>$(s).addEventListener("input",renderTankModule));
 $("#registerTankLevel").addEventListener("click",()=>{
   const calc=tankCalculation(),base=tankCalculation("initial"),message=$("#tankMessage"),initialTime=$("#initialTankTime").value,time=$("#tankTime").value;if(!calc.valid||!base.valid||!initialTime||!time){message.textContent=!base.valid?`Nivel inicial: ${base.message}`:!calc.valid?`Nivel actual: ${calc.message}`:"Seleccione la hora inicial y la hora actual.";message.className="transfer-message";return}
@@ -160,8 +173,9 @@ $("#registerTankLevel").addEventListener("click",()=>{
 $("#resetData").addEventListener("click",()=>{rows=structuredClone(initialRows);tankRecords=[];forecastFlow=0;flowManuallyEdited=false;accumulationResetIndex=0;$("#initialTankAccumulated").value=0;["#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters"].forEach(id=>$(id).value=0);$("#tankMessage").textContent="Ingrese el nivel inicial y el nivel actual para calcular el primer caudal.";$("#tankMessage").className="transfer-message";render()});
 $("#saveImage").addEventListener("click",()=>window.print());
 async function initializeApp(){
-  const now=new Date(),start=`${String(now.getHours()).padStart(2,"0")}:00`,current=`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#operationTime").value=current;$("#tankSelect").innerHTML=Object.keys(window.TANK_CALIBRATION||{}).map(t=>`<option value="${t}">TP-${t.padStart(2,"0")}</option>`).join("");$("#batchEquivalentInput").value=rows[0]?.batch||"";
+  const now=new Date(),start=`${String(now.getHours()).padStart(2,"0")}:00`,current=`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`,today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#operationTime").value=current;$("#alarmDate").value=today;$("#alarmTime").value=current;$("#tankSelect").innerHTML=Object.keys(window.TANK_CALIBRATION||{}).map(t=>`<option value="${t}">TP-${t.padStart(2,"0")}</option>`).join("");$("#batchEquivalentInput").value=rows[0]?.batch||"";
   const found=await loadSharedState();syncReady=true;render();if(!found)scheduleStateSave();
   setInterval(()=>{if(!["INPUT","SELECT","TEXTAREA"].includes(document.activeElement?.tagName))loadSharedState(false)},15000);
+  setInterval(checkScheduledAlarms,30000);checkScheduledAlarms();
 }
 initializeApp();

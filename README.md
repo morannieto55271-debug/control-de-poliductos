@@ -8,7 +8,7 @@ Cuando el volumen recibido completa la primera partida, esta se retira automáti
 
 El caudal se calcula en BBL/H según el volumen recibido y el tiempo transcurrido. La hora avanza automáticamente una hora después de registrar, pero el operador puede modificarla. El acumulado puede iniciar en cero o en un valor manual.
 
-La estimación operativa toma el saldo de la primera partida y lo divide para el último caudal registrado. Muestra el faltante en BBL y el tiempo adicional en horas y minutos. El caudal se obtiene automáticamente con las tablas de aforo, pero puede corregirse manualmente. El botón `Fin de partida` pone en cero el acumulado y los niveles para comenzar la siguiente partida sin borrar el histórico.
+La estimación operativa toma el saldo de la primera partida y lo divide para el último caudal registrado. Muestra el faltante en BBL y el tiempo adicional en horas y minutos. El caudal se obtiene automáticamente con las tablas de aforo, pero puede corregirse manualmente. El botón `Fin de partida` pone en cero el acumulado y conserva el nivel actual como nueva referencia para comenzar la siguiente partida sin borrar el histórico.
 
 ## Aforo de tanques
 
@@ -24,6 +24,12 @@ El mensaje incluye producto, volumen bombeado, volumen recibido y saldo pendient
 
 - `TELEGRAM_BOT_TOKEN`: token entregado por BotFather.
 - `TELEGRAM_CHAT_ID`: identificador del chat o grupo receptor.
+
+## Alarmas programadas
+
+El operador puede escoger una fecha, una hora y escribir un mensaje. La aplicación comprueba las alarmas cada 30 segundos mientras permanece abierta. Para que se envíen aun con la aplicación cerrada, configure un monitor gratuito que visite cada minuto esta dirección:
+
+`https://control-de-poliductos.vercel.app/api/alarm-dispatch`
 
 ## Sincronización entre dispositivos
 
@@ -51,4 +57,4 @@ También puede probarla localmente abriendo `index.html` en un navegador.
 - Longitud = Porcentaje × 127 km.
 - Los productos se ubican en el orden de las partidas: la primera fila queda más próxima a Pascuales.
 
-La app funciona completamente en el navegador y no envía información a servidores externos.
+Los datos operativos se sincronizan mediante Supabase y los avisos configurados se envían mediante Telegram.

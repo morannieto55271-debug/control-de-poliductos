@@ -59,6 +59,20 @@
         <div id="operationHistory" class="operation-history"></div>
       </section>
 
+      <section class="alarm-panel" aria-label="Alarmas programadas de Telegram">
+        <div class="alarm-head"><div><span class="eyebrow">TELEGRAM</span><h2>Alarma programada</h2></div><span class="alarm-zone">HORA DE ECUADOR</span></div>
+        <div class="alarm-controls">
+          <label>Fecha<input id="alarmDate" type="date"></label>
+          <label>Hora<input id="alarmTime" type="time"></label>
+          <label>Mensaje<input id="alarmMessage" type="text" maxlength="1000" placeholder="MENSAJE DE LA ALARMA"></label>
+          <button id="scheduleAlarm" class="button primary" type="button">Programar alarma</button>
+          <button id="clearAlarmForm" class="button ghost" type="button">Limpiar</button>
+        </div>
+        <p id="alarmMessageStatus" class="transfer-message" aria-live="polite"></p>
+        <div id="alarmEmpty" class="hourly-empty">No existen alarmas programadas.</div>
+        <div id="alarmList" class="alarm-list"></div>
+      </section>
+
       <section class="operation-forecast" aria-label="Estimación de la primera partida">
         <div class="forecast-panel">
           <div class="forecast-head"><div><span class="eyebrow">PRIMERA PARTIDA</span><h2>Tiempo adicional estimado</h2></div><button id="resetForecast" class="level-reset" type="button">Reiniciar cálculo</button></div>
@@ -160,8 +174,8 @@
       </section>
     </main>
 
-    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 11-09-2026.4</footer>
+    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 13-09-2026.1</footer>
     <script src="tank-data.js?v=20260908-1"></script>
-    <script src="app.js?v=20260911-4"></script>
+    <script src="app.js?v=20260913-1"></script>
   </body>
 </html>
