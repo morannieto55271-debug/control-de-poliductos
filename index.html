@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#07131f" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="description" content="Visualizador de empaquetamiento del Poliducto Libertad–Pascuales." />
     <title>Estación Reductora Pascuales | Control de Empaquetamiento</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -39,7 +39,7 @@
       <section class="pipeline-status-panel" aria-label="Estado operativo del poliducto">
         <div class="pipeline-status-head">
           <div><span class="eyebrow">ESTADO DEL POLIDUCTO</span><h2 id="operationStatusText">Operación normal</h2></div>
-          <span id="operationStatusBadge" class="operation-badge running">EN OPERACIÓN</span>
+          <div class="section-head-actions"><button id="clearOperationHistory" class="history-clear-button" type="button">Borrar historial</button><span id="operationStatusBadge" class="operation-badge running">EN OPERACIÓN</span></div>
         </div>
         <div class="operation-controls">
           <label>Motivo de paralización
@@ -60,7 +60,7 @@
       </section>
 
       <section class="alarm-panel" aria-label="Alarmas programadas de Telegram">
-        <div class="alarm-head"><div><span class="eyebrow">TELEGRAM</span><h2>Alarma programada</h2></div><span class="alarm-zone">HORA DE ECUADOR</span></div>
+        <div class="alarm-head"><div><span class="eyebrow">TELEGRAM</span><h2>Alarma programada</h2></div><div class="section-head-actions"><button id="clearAlarmHistory" class="history-clear-button" type="button">Borrar historial</button><span class="alarm-zone">HORA DE ECUADOR</span></div></div>
         <div class="alarm-controls">
           <label>Fecha<input id="alarmDate" type="date"></label>
           <label>Hora<input id="alarmTime" type="time"></label>
@@ -174,8 +174,8 @@
       </section>
     </main>
 
-    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 13-09-2026.1</footer>
+    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 16-09-2026.1</footer>
     <script src="tank-data.js?v=20260908-1"></script>
-    <script src="app.js?v=20260913-1"></script>
+    <script src="app.js?v=20260916-1"></script>
   </body>
 </html>

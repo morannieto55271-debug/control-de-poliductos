@@ -159,8 +159,18 @@ $("#resumeOperation").addEventListener("click",()=>{
   const time=$("#operationTime").value,observation=$("#operationObservation").value.trim(),message=$("#operationMessage");if(!time){message.textContent="Seleccione la hora de reinicio.";return}if(operationStatus.status!=="stopped"){message.textContent="El poliducto ya consta en operación.";return}
   const hours=elapsedHours(operationStatus.since,time),minutes=Math.round(hours*60),duration=`${Math.floor(minutes/60)} h ${String(minutes%60).padStart(2,"0")} min`;operationStatus={status:"running",since:time,reason:""};operationHistory.push({status:"running",time,duration,observation,createdAt:new Date().toISOString()});renderOperationStatus();publishOperationStatus({status:"running",time,stoppedDuration:duration,observation});message.textContent="Reinicio de operación registrado y enviado a Telegram.";message.className="transfer-message success";
 });
+$("#clearOperationHistory").addEventListener("click",()=>{
+  if(!operationHistory.length){$("#operationMessage").textContent="El historial del poliducto ya está vacío.";return}
+  if(!window.confirm("¿Desea borrar todo el historial de paralizaciones y reinicios?"))return;
+  operationHistory=[];renderOperationStatus();$("#operationMessage").textContent="Historial del poliducto eliminado.";$("#operationMessage").className="transfer-message success";scheduleStateSave();
+});
 $("#scheduleAlarm").addEventListener("click",()=>{const date=$("#alarmDate").value,time=$("#alarmTime").value,message=$("#alarmMessage").value.trim().toUpperCase(),status=$("#alarmMessageStatus");if(!date||!time||!message){status.textContent="Ingrese la fecha, la hora y el mensaje.";return}const timestamp=new Date(`${date}T${time}:00-05:00`);if(!Number.isFinite(timestamp.getTime())){status.textContent="La fecha o la hora no son válidas.";return}if(editingAlarmId){const alarm=alarms.find(item=>item.id===editingAlarmId);if(alarm)Object.assign(alarm,{date,time,message,status:"pending",updatedAt:new Date().toISOString()})}else alarms.push({id:`alarm-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,date,time,message,status:"pending",createdAt:new Date().toISOString()});editingAlarmId=null;$("#scheduleAlarm").textContent="Programar alarma";$("#alarmMessage").value="";renderAlarms();status.textContent="Alarma programada para enviarse a Telegram.";status.className="transfer-message success";scheduleStateSave();setTimeout(checkScheduledAlarms,1800)});
 $("#clearAlarmForm").addEventListener("click",()=>{editingAlarmId=null;$("#alarmDate").value="";$("#alarmTime").value="";$("#alarmMessage").value="";$("#scheduleAlarm").textContent="Programar alarma";$("#alarmMessageStatus").textContent=""});
+$("#clearAlarmHistory").addEventListener("click",()=>{
+  if(!alarms.length){$("#alarmMessageStatus").textContent="El historial de alarmas ya está vacío.";return}
+  if(!window.confirm("¿Desea borrar todo el historial de alarmas, incluidas las pendientes?"))return;
+  alarms=[];editingAlarmId=null;$("#scheduleAlarm").textContent="Programar alarma";renderAlarms();$("#alarmMessageStatus").textContent="Historial de alarmas eliminado.";$("#alarmMessageStatus").className="transfer-message success";scheduleStateSave();
+});
 async function checkScheduledAlarms(){try{await fetch("/api/alarm-dispatch",{method:"POST"});await loadSharedState(false)}catch(error){console.warn("Verificación de alarmas pendiente")}}
 ["#tankSelect","#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters","#initialTankTime","#tankTime","#initialTankAccumulated"].forEach(s=>$(s).addEventListener("input",renderTankModule));
 $("#registerTankLevel").addEventListener("click",()=>{
