@@ -34,3 +34,29 @@ input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-ou
 /* Controles para limpiar historiales en el tema oscuro. */
 .section-head-actions{display:flex;align-items:center;gap:10px}.history-clear-button{border:1px solid rgba(255,123,104,.55);border-radius:8px;background:transparent;color:#ffad9f;padding:7px 10px;font:700 10px "DM Sans";cursor:pointer}.history-clear-button:hover{background:rgba(255,123,104,.1);border-color:#ff7b68}
 @media(max-width:620px){.section-head-actions{width:100%;justify-content:space-between}.history-clear-button{padding:8px 10px}}
+
+/* PDF operativo: únicamente histórico de niveles y partidas/volúmenes. */
+.print-report-header{display:none}
+@page{size:A4 landscape;margin:10mm}
+@media print{
+  body{background:#fff!important;color:#111!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .topbar,.summary,.current-flow-panel,.pipeline-status-panel,.alarm-panel,.operation-forecast,footer{display:none!important}
+  main{max-width:none!important;margin:0!important;padding:0!important}
+  .print-report-header{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:12mm!important;margin:0 0 8mm!important;padding:0 0 5mm!important;border-bottom:2px solid #123b5c!important}
+  .print-report-header img{display:block!important;width:58mm!important;height:auto!important;object-fit:contain!important}
+  .print-report-header h1{margin:0!important;color:#102f4a!important;font:800 18px Manrope,sans-serif!important;letter-spacing:.02em!important;text-align:left!important}
+  .tank-module,.workspace,.inputs-panel{display:block!important;width:100%!important;margin:0 0 10mm!important;padding:0!important;background:#fff!important;border:0!important;box-shadow:none!important;color:#111!important}
+  .tank-layout,.tank-source,.tank-module-head .level-reset,#tankHistoryEmpty,.pipeline-panel,.inputs-panel .hint,.inputs-panel .panel-head .button,.inputs-panel .actions{display:none!important}
+  .tank-module-head,.panel-head{display:block!important;padding:0 0 3mm!important;margin:0!important;border-bottom:1px solid #555!important}
+  .tank-module-head h2,.panel-head h2{color:#111!important;font-size:15px!important;margin:1mm 0 0!important}
+  .eyebrow{color:#333!important;font-size:8px!important}
+  .tank-history-wrap,.table-wrap{overflow:visible!important}
+  table,.tank-history-table{width:100%!important;min-width:0!important;border-collapse:collapse!important;table-layout:auto!important}
+  thead{display:table-header-group}
+  tr{break-inside:avoid;page-break-inside:avoid}
+  th,td{color:#111!important;border:1px solid #777!important;padding:2mm 1.5mm!important;font-size:8px!important;white-space:nowrap!important}
+  th{background:#e9eef0!important;font-weight:700!important}
+  input,.product-select{color:#111!important;background:transparent!important;border:0!important;padding:0!important;font-size:8px!important;min-width:0!important;appearance:none!important}
+  .tank-history-table th:last-child,.tank-history-table td:last-child,.inputs-panel table th:last-child,.inputs-panel table td:last-child{display:none!important}
+  .workspace{margin-top:8mm!important}
+}

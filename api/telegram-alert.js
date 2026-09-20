@@ -12,7 +12,7 @@ module.exports = async function handler(request, response) {
     return response.status(503).json({ error: "Telegram todavía no está configurado" });
   }
 
-  const { type = "alert", batch, product, remaining, flow, time, tank, sent, received, timeRemaining, estimatedEnd, status, reason, observation, stoppedDuration } = request.body || {};
+  const { type = "alert", batch, product, remaining, flow, time, tank, sent, received, accumulated, timeRemaining, estimatedEnd, status, reason, observation, stoppedDuration } = request.body || {};
 
   const clean = value => String(value ?? "").replace(/[<>]/g, "").slice(0, 80);
 
@@ -50,6 +50,7 @@ module.exports = async function handler(request, response) {
       `📦 Partida: ${clean(batch) || "Sin registrar"}`,
       `📤 Bombeado: ${Math.round(Number(sent) || 0).toLocaleString("es-EC")} BBL`,
       `📥 Recibido: ${Math.round(Number(received) || 0).toLocaleString("es-EC")} BBL`,
+      `📊 Acumulado: ${Math.round(Number(accumulated) || 0).toLocaleString("es-EC")} BBL`,
       `🛢️ Producto: ${clean(product) || "Sin registrar"}`,
       `🏭 Tanque: ${clean(tank) || "Sin registrar"}`,
       `⏳ Falta por recibir: ${Math.round(Number(remaining) || 0).toLocaleString("es-EC")} BBL`,
