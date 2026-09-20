@@ -46,25 +46,25 @@ input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-ou
   main{max-width:none!important;margin:0!important;padding:0!important}
   .print-report-header{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:12mm!important;margin:0 0 8mm!important;padding:0 0 5mm!important;border-bottom:2px solid #123b5c!important}
   .print-report-header img{display:block!important;width:58mm!important;height:auto!important;object-fit:contain!important}
-  .print-report-header h1{margin:0!important;color:#102f4a!important;font:800 18px Manrope,sans-serif!important;letter-spacing:.02em!important;text-align:left!important}
+  .print-report-header h1{margin:0!important;color:#102f4a!important;font:800 20px Arial,sans-serif!important;letter-spacing:.02em!important;text-align:left!important}
   .print-stop-report:not([hidden]){display:block!important;width:100%!important;margin:0 0 8mm!important;color:#111!important}
-  .print-stop-report h2{margin:0 0 3mm!important;padding:0 0 2mm!important;border-bottom:1px solid #555!important;color:#111!important;font:700 15px Manrope,sans-serif!important}
+  .print-stop-report h2{margin:0 0 3mm!important;padding:0 0 2mm!important;border-bottom:1px solid #555!important;color:#111!important;font:700 16px Arial,sans-serif!important}
   .tank-module,.workspace,.inputs-panel{display:block!important;width:100%!important;margin:0 0 10mm!important;padding:0!important;background:#fff!important;border:0!important;box-shadow:none!important;color:#111!important}
   .tank-layout,.tank-source,.tank-module-head .level-reset,#tankHistoryEmpty,.pipeline-panel,.inputs-panel .hint,.inputs-panel .panel-head .button,.inputs-panel .actions{display:none!important}
   .tank-module-head,.panel-head{display:block!important;padding:0 0 3mm!important;margin:0!important;border-bottom:1px solid #555!important}
-  .tank-module-head h2,.panel-head h2{color:#111!important;font-size:15px!important;margin:1mm 0 0!important}
-  .eyebrow{color:#333!important;font-size:8px!important}
+  .tank-module-head h2,.panel-head h2{color:#111!important;font:700 16px Arial,sans-serif!important;margin:1mm 0 0!important}
+  .eyebrow{color:#333!important;font:700 9px Arial,sans-serif!important}
   .tank-history-wrap,.table-wrap{overflow:visible!important}
   table,.tank-history-table{width:100%!important;min-width:0!important;border-collapse:collapse!important;table-layout:auto!important}
   thead{display:table-header-group}
   tr{break-inside:avoid;page-break-inside:avoid}
-  th,td{color:#111!important;border:1px solid #777!important;padding:2mm 1.5mm!important;font-size:8px!important;white-space:nowrap!important}
+  th,td{color:#111!important;border:1px solid #777!important;padding:2.2mm 1.5mm!important;font:400 10px Arial,sans-serif!important;white-space:nowrap!important}
   th{background:#e9eef0!important;font-weight:700!important}
-  input,.product-select{color:#111!important;background:transparent!important;border:0!important;padding:0!important;font-size:8px!important;min-width:0!important;appearance:none!important}
+  input,.product-select{color:#111!important;background:transparent!important;border:0!important;padding:0!important;font:400 10px Arial,sans-serif!important;min-width:0!important;appearance:none!important}
   .tank-history-table th:last-child,.tank-history-table td:last-child,.inputs-panel table th:last-child,.inputs-panel table td:last-child{display:none!important}
   .tank-history-table th:nth-child(11),.tank-history-table td:nth-child(11){white-space:normal!important;min-width:35mm!important;line-height:1.25!important}
   .workspace{margin-top:8mm!important}
   .print-signature{display:flex!important;min-height:28mm!important;margin:14mm 0 0!important;break-inside:avoid!important;page-break-inside:avoid!important;flex-direction:column!important;align-items:center!important;justify-content:flex-end!important;color:#111!important}
   .print-signature .signature-line{width:72mm!important;border-top:1px solid #111!important;margin-bottom:3mm!important}
-  .print-signature strong{font:700 11px Manrope,sans-serif!important;letter-spacing:.04em!important}
+  .print-signature strong{font:700 12px Arial,sans-serif!important;letter-spacing:.04em!important}
 }
