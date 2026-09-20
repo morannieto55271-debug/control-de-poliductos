@@ -101,7 +101,7 @@
 
       <section class="tank-module" aria-label="Cálculo de volumen por nivel de tanque">
         <div class="tank-module-head">
-          <div><span class="eyebrow">AFORO DE TANQUES</span><h2>Recepción calculada por nivel</h2></div>
+          <div><span class="eyebrow">AFORO DE TANQUES</span><h2>Registro de operaciones</h2></div>
           <button id="finishBatch" class="level-reset finish-batch" type="button">Fin de partida</button>
         </div>
         <div class="tank-layout">
@@ -129,6 +129,7 @@
                 <label>Centímetros<input id="levelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
                 <label>Milímetros<input id="levelMillimeters" type="number" min="0" max="9" step="1" value="0"></label>
               </div>
+              <label class="operation-record-observation">Observaciones<textarea id="tankObservationInput" rows="3" maxlength="500" placeholder="ESCRIBA AQUÍ LAS NOVEDADES U OBSERVACIONES DE LA OPERACIÓN"></textarea></label>
             </div>
             <button id="registerTankLevel" class="button primary" type="button">Registrar lectura del tanque</button>
             <p id="tankMessage" class="transfer-message" aria-live="polite">Ingrese el nivel inicial y el nivel actual para calcular el primer caudal.</p>
@@ -145,7 +146,7 @@
         <div id="tankHistoryEmpty" class="hourly-empty">Todavía no se han registrado niveles de tanques.</div>
         <div class="tank-history-wrap">
           <table class="tank-history-table">
-            <thead><tr><th>Hora</th><th>Succión PSI</th><th>Partida equivalente</th><th>Producto</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Hora</th><th>Succión PSI</th><th>Partida equivalente</th><th>Producto</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th><th>Observaciones</th><th>Acciones</th></tr></thead>
             <tbody id="tankHistory"></tbody>
           </table>
         </div>
@@ -187,10 +188,15 @@
           <div id="segmentList" class="segment-list"></div>
         </article>
       </section>
+
+      <section class="print-signature" aria-hidden="true">
+        <div class="signature-line"></div>
+        <strong>TÉCNICO LÍDER DE OPERACIONES</strong>
+      </section>
     </main>
 
-    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 20-09-2026.5</footer>
+    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 20-09-2026.6</footer>
     <script src="tank-data.js?v=20260908-1"></script>
-    <script src="app.js?v=20260920-5"></script>
+    <script src="app.js?v=20260920-6"></script>
   </body>
 </html>
