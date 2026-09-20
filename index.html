@@ -114,7 +114,6 @@
             <div class="reading-block current-reading">
               <div class="reading-title"><h3>Nivel actual</h3><button id="resetCurrentLevel" class="level-reset" type="button">Reiniciar nivel actual</button></div>
               <label>Hora actual<input id="tankTime" type="time" value="09:00"></label>
-              <label>Succión <span>PSI</span><input id="suctionPsiInput" type="number" min="0" step="0.01" value="0"></label>
               <div class="level-fields">
                 <label>Metros<input id="levelMeters" type="number" min="0" step="1" value="0"></label>
                 <label>Centímetros<input id="levelCentimeters" type="number" min="0" max="99" step="1" value="0"></label>
@@ -125,7 +124,6 @@
             <p id="tankMessage" class="transfer-message" aria-live="polite">Ingrese el nivel inicial y el nivel actual para calcular el primer caudal.</p>
           </div>
           <div class="tank-results">
-            <article><span>Producto de la partida</span><strong id="tankProductDisplay">—</strong></article>
             <article><span>Nivel interpretado</span><strong id="tankLevelDisplay">0,000 m</strong></article>
             <article><span>Volumen calculado</span><strong id="tankGallonsDisplay">0 <small>GLS</small></strong></article>
             <article><span>Último recibido registrado</span><strong id="tankReceivedDisplay">0 <small>BBL</small></strong></article>
@@ -136,7 +134,7 @@
         <div id="tankHistoryEmpty" class="hourly-empty">Todavía no se han registrado niveles de tanques.</div>
         <div class="tank-history-wrap">
           <table class="tank-history-table">
-            <thead><tr><th>Hora</th><th>Succión PSI</th><th>Partida equivalente</th><th>Producto</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Hora</th><th>Partida equivalente</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th><th>Acciones</th></tr></thead>
             <tbody id="tankHistory"></tbody>
           </table>
         </div>
@@ -180,8 +178,8 @@
       </section>
     </main>
 
-    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 20-09-2026.3</footer>
+    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 20-09-2026.2</footer>
     <script src="tank-data.js?v=20260908-1"></script>
-    <script src="app.js?v=20260920-3"></script>
+    <script src="app.js?v=20260920-1"></script>
   </body>
 </html>
