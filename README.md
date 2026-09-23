@@ -12,7 +12,7 @@ La estimación operativa toma el saldo de la primera partida y lo divide para el
 
 ## Aforo de tanques
 
-El módulo de tanques utiliza las tablas de calibración de `CONDICIONES POLIDUCTOS (version 3).xlsx` para los TP-09, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29 y 35. El operador ingresa hora y nivel inicial, hora y nivel actual. Desde el primer registro, la app calcula la diferencia recibida en barriles, el caudal en BBL/H y lo suma al acumulado inicial. Después, el nivel actual se convierte automáticamente en el nivel inicial de la siguiente lectura.
+El módulo de tanques utiliza las tablas de calibración de `CONDICIONES POLIDUCTOS (version 3).xlsx` para los TP-09, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29 y 35. El operador ingresa hora, partida equivalente, grado API, temperatura, succión y niveles inicial y actual. Cada registro conserva estos datos en el historial y en el reporte PDF. La app calcula la diferencia recibida en barriles, el caudal en BBL/H y lo suma al acumulado inicial. Después, el nivel actual se convierte automáticamente en el nivel inicial de la siguiente lectura.
 
 ## Alerta de Telegram
 

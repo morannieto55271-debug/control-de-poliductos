@@ -108,6 +108,8 @@
           <div class="tank-controls">
             <label>Tanque<select id="tankSelect" aria-label="Seleccionar tanque"></select></label>
             <label>Partida equivalente<input id="batchEquivalentInput" type="text" placeholder="Ej.: 340 o 506-B"></label>
+            <label>Grado API<input id="apiDegreeInput" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ej.: 45,2"></label>
+            <label>Temperatura <span>°F</span><input id="temperatureInput" type="number" inputmode="decimal" step="0.1" placeholder="Ej.: 82,5"></label>
             <label>Acumulado inicial <span>BBL</span><input id="initialTankAccumulated" type="number" min="0" step="1" value="0"></label>
             <div class="reading-block">
               <div class="reading-title"><h3>Nivel inicial</h3><button id="resetInitialLevel" class="level-reset" type="button">Reiniciar nivel inicial</button></div>
@@ -146,7 +148,7 @@
         <div id="tankHistoryEmpty" class="hourly-empty">Todavía no se han registrado niveles de tanques.</div>
         <div class="tank-history-wrap">
           <table class="tank-history-table">
-            <thead><tr><th>Hora</th><th>Succión PSI</th><th>Partida equivalente</th><th>Producto</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th><th>Observaciones</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Hora</th><th>Succión PSI</th><th>Grado API</th><th>Temperatura °F</th><th>Partida equivalente</th><th>Producto</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th><th>Observaciones</th><th>Acciones</th></tr></thead>
             <tbody id="tankHistory"></tbody>
           </table>
         </div>
@@ -195,9 +197,9 @@
       </section>
     </main>
 
-    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 21-09-2026.9</footer>
+    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 23-09-2026.10</footer>
     <script src="tank-data.js?v=20260908-1"></script>
     <script src="tank-35-data.js?v=20260921-1"></script>
-    <script src="app.js?v=20260921-9"></script>
+    <script src="app.js?v=20260923-10"></script>
   </body>
 </html>
