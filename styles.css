@@ -96,3 +96,10 @@ footer{margin-left:194px;color:#6e8ba0}.print-report-header{display:none}
 .scale{margin-left:235px;margin-right:255px}
 @media(max-width:1180px){.scada-pipeline-stage{grid-template-columns:150px minmax(240px,1fr) 165px;min-height:170px}.station-visual{height:160px}.station-visual img{height:145px}.pump-visual img{width:205px;transform:translateX(14px)}.tanks-visual img{width:220px;transform:translateX(-14px)}.scale{margin-left:150px;margin-right:165px}}
 @media(max-width:760px){.scada-pipeline-stage{grid-template-columns:1fr;min-height:0}.station-visual{display:none}.scale{margin:10px 2px 0}}
+
+/* Fotografías reales de las instalaciones */
+.station-visual img{width:calc(100% - 10px);height:148px;max-width:100%;object-fit:cover;transform:none;border:3px solid #7894a6;border-radius:11px;background:#071827;box-shadow:0 0 0 3px #203c4e,0 16px 24px rgba(0,0,0,.52);filter:saturate(.92) contrast(1.06)}
+.pump-visual img{object-position:center 48%}
+.tanks-visual img{object-position:center center}
+.station-visual small{bottom:5px;color:#fff;background:linear-gradient(180deg,rgba(3,23,38,.96),rgba(3,15,27,.98));border-color:#2d6f96}
+@media(max-width:1180px){.station-visual img{width:calc(100% - 8px);height:125px}.station-visual small{font-size:8px;padding:4px 6px}}
