@@ -12,7 +12,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <link rel="stylesheet" href="styles.css?v=20260929-scada1" />
+    <link rel="stylesheet" href="styles.css?v=20260929-real1" />
   </head>
   <body>
     <header class="topbar">
@@ -194,11 +194,17 @@
 
           <div class="terminal-labels"><span>LIBERTAD · KM 0</span><span>PASCUALES · KM 127</span></div>
           <div class="scada-pipeline-stage">
-            <div class="station-visual pump-visual" aria-label="Estación de bombeo Libertad"><span class="pump-motor"></span><span class="pump-body"></span><small>ESTACIÓN DE BOMBEO</small></div>
+            <div class="station-visual pump-visual" aria-label="Estación de bombeo Libertad">
+              <img src="estacion-bombeo-realista.png?v=20260929-real1" alt="Estación de bombeo industrial de Libertad">
+              <small>ESTACIÓN DE BOMBEO LIBERTAD</small>
+            </div>
             <div class="pipe-shell">
               <div id="pipeline" class="pipeline" role="img" aria-label="Distribución de productos en el ducto"></div>
             </div>
-            <div class="station-visual tanks-visual" aria-label="Tanques de recepción Pascuales"><span></span><span></span><small>TANQUES DE RECEPCIÓN</small></div>
+            <div class="station-visual tanks-visual" aria-label="Tanques de recepción Pascuales">
+              <img src="tanques-recepcion-realistas.png?v=20260929-real1" alt="Tanques industriales de recepción en Pascuales">
+              <small>TANQUES DE RECEPCIÓN PASCUALES</small>
+            </div>
           </div>
           <div class="scale" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span><span>127 km</span></div>
           <div id="emptyState" class="empty" hidden>No hay volumen disponible para calcular la posición.</div>
@@ -215,9 +221,9 @@
     </main>
     </div>
 
-    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Interfaz SCADA 29-09-2026</footer>
+    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Interfaz SCADA REALISTA 29-09-2026</footer>
     <script src="tank-data.js?v=20260908-1"></script>
     <script src="tank-35-data.js?v=20260921-1"></script>
-    <script src="app.js?v=20260929-scada1"></script>
+    <script src="app.js?v=20260929-real1"></script>
   </body>
 </html>

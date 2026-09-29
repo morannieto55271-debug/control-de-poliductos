@@ -83,3 +83,16 @@ footer{margin-left:194px;color:#6e8ba0}.print-report-header{display:none}
 @media(max-width:1180px){.app-shell{grid-template-columns:78px minmax(0,1fr)}.scada-sidebar{padding:16px 7px}.nav-item{justify-content:center;padding:13px 6px;font-size:0}.nav-item span{font-size:23px}.summary{grid-template-columns:repeat(2,1fr)}footer{margin-left:78px}.scada-pipeline-stage{grid-template-columns:110px minmax(240px,1fr) 120px}.scale{margin-left:110px;margin-right:120px}.station-visual small{display:none}.pump-motor{left:5px}.pump-body{right:5px}.tanks-visual>span{width:50px}}
 @media(max-width:760px){.topbar{height:82px;padding:0 12px}.company-logo{width:94px;height:58px}.brand{gap:10px}.brand h1{font-size:15px}.brand small{font-size:10px}.app-shell{display:block}.scada-sidebar{position:sticky;top:82px;height:auto;flex-direction:row;overflow:auto;padding:7px;background:#041624;border-bottom:1px solid #17445f}.nav-item{flex:0 0 60px}.scada-main{padding:12px 10px 34px}.summary{grid-template-columns:1fr 1fr;gap:8px}.summary article{min-height:100px;padding:14px 10px 12px 58px}.summary article:before{left:10px;top:15px;width:38px;height:38px;font-size:20px}.summary strong{font-size:24px}.scada-pipeline-stage{grid-template-columns:1fr}.station-visual{display:none}.pipe-shell{width:100%}.scale{margin:10px 2px 0}.pipeline{height:72px}.pipe-segment span{font-size:9px}.segment-list{grid-template-columns:1fr}.topbar .status{display:none}footer{margin-left:0}.pipeline-panel{min-height:0}}
 @media print{.app-shell{display:block}.scada-sidebar{display:none}.scada-main{display:block;padding:0}.scada-main>section{margin-bottom:14px}.workspace{display:block}.pipeline-panel{display:none}footer{margin-left:0}.topbar{position:static}.print-report-header{display:flex}}
+
+/* Equipos industriales realistas 29-09-2026 */
+.scada-pipeline-stage{grid-template-columns:235px minmax(260px,1fr) 255px;min-height:205px}
+.station-visual{height:195px;align-items:center;overflow:visible;z-index:2}
+.station-visual img{display:block;width:100%;height:180px;object-fit:contain;filter:drop-shadow(0 18px 16px rgba(0,0,0,.55)) drop-shadow(0 0 10px rgba(75,168,225,.12));position:relative;z-index:2}
+.pump-visual,.tanks-visual{border:0;background:radial-gradient(ellipse at 50% 75%,rgba(26,117,170,.16),transparent 64%)}
+.pump-visual img{width:270px;max-width:none;transform:translateX(18px)}
+.tanks-visual img{width:295px;max-width:none;transform:translateX(-18px)}
+.station-visual small{bottom:-2px;padding:5px 10px;border:1px solid #245979;border-radius:6px;background:rgba(3,18,31,.92);box-shadow:0 7px 14px rgba(0,0,0,.35);letter-spacing:.045em;z-index:4}
+.pipe-shell{position:relative;z-index:1}
+.scale{margin-left:235px;margin-right:255px}
+@media(max-width:1180px){.scada-pipeline-stage{grid-template-columns:150px minmax(240px,1fr) 165px;min-height:170px}.station-visual{height:160px}.station-visual img{height:145px}.pump-visual img{width:205px;transform:translateX(14px)}.tanks-visual img{width:220px;transform:translateX(-14px)}.scale{margin-left:150px;margin-right:165px}}
+@media(max-width:760px){.scada-pipeline-stage{grid-template-columns:1fr;min-height:0}.station-visual{display:none}.scale{margin:10px 2px 0}}
