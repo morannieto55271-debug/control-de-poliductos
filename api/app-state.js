@@ -7,6 +7,9 @@ const headers = key => {
 };
 
 module.exports = async function handler(request, response) {
+  response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  response.setHeader("Pragma", "no-cache");
+  response.setHeader("Expires", "0");
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) return response.status(503).json({ error: "Sincronización no configurada" });

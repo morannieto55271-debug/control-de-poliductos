@@ -1,8 +1,8 @@
-const PIPE_KM=127,COLORS=["#bdff4a","#24d6d1","#ffb84d","#bda7ff","#ff7b68","#62a8ff","#f279c6","#85d37d","#ffd966"];
+const APP_VERSION="29-09-2026.SCADA1",PIPE_KM=127,COLORS=["#bdff4a","#24d6d1","#ffb84d","#bda7ff","#ff7b68","#62a8ff","#f279c6","#85d37d","#ffd966"];
 const initialRows=[{batch:"126",product:"JET A1",sent:7367,received:1608},{batch:"127",product:"DESTILADO",sent:101,received:0},{batch:"128",product:"DIESEL OIL",sent:36850,received:0}];
 const PRODUCTS=["JET A1","DIESEL OIL","DIESEL PREMIUM","DESTILADO","GASOLINA EXTRA","GASOLINA ECOPAÍS","GASOLINA SÚPER","NAFTA RON 80","NAFTA RON 95","PREMIUM IMP","PREMEZCLA","GASOLINA BASE LIB","GASOLINA BASE ESM"];
 let rows=structuredClone(initialRows),tankRecords=[],forecastFlow=0,flowManuallyEdited=false,accumulationResetIndex=0,editingTankRecordIndex=null;
-let operationStatus={status:"running",since:null,reason:""},operationHistory=[],telegramAlertsSent=[],syncReady=false,syncSaveTimer=null,lastRemoteUpdate=null;
+let operationStatus={status:"running",since:null,reason:""},operationHistory=[],telegramAlertsSent=[],syncReady=false,syncSaveTimer=null,lastRemoteUpdate=null,localChangesPending=false;
 let alarms=[],editingAlarmId=null;
 const $=s=>document.querySelector(s),parseNumber=v=>{if(typeof v==="number")return v;const text=String(v??"").trim().replace(/\s/g,"");if(!text)return 0;if(text.includes(","))return Number(text.replace(/\./g,"").replace(",","."));if(/^\d{1,3}(\.\d{3})+$/.test(text))return Number(text.replace(/\./g,""));return Number(text)},safeNumber=v=>Math.max(0,parseNumber(v)||0),optionalNumber=v=>String(v??"").trim()===""?null:safeNumber(v),fmt=(n,d=0)=>new Intl.NumberFormat("es-EC",{maximumFractionDigits:d,minimumFractionDigits:d}).format(n);
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -72,16 +72,17 @@ function applySharedState(state){
   if(Array.isArray(state.alarms))alarms=state.alarms.slice(-500);
   Object.entries(state.fields||{}).forEach(([id,value])=>{const element=document.getElementById(id);if(element)element.value=value});return true;
 }
-function setSyncStatus(text){const element=$("#syncStatus");if(element)element.textContent=text}
-function scheduleStateSave(){if(!syncReady)return;clearTimeout(syncSaveTimer);syncSaveTimer=setTimeout(saveSharedState,700)}
+function setSyncStatus(text){const element=$("#syncStatus");if(element){element.textContent=text;element.title=`Versión ${APP_VERSION}`}}
+function scheduleStateSave(){if(!syncReady)return;localChangesPending=true;clearTimeout(syncSaveTimer);syncSaveTimer=setTimeout(saveSharedState,700)}
 async function saveSharedState(){
+  syncSaveTimer=null;
   setSyncStatus("Guardando…");
-  try{const response=await fetch("/api/app-state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({state:captureState()})});if(!response.ok)throw new Error();const data=await response.json();lastRemoteUpdate=data.updated_at;setSyncStatus("Datos sincronizados")}
-  catch(error){setSyncStatus("Sin conexión para guardar")}
+  try{const response=await fetch(`/api/app-state?t=${Date.now()}`,{method:"PUT",cache:"no-store",headers:{"Content-Type":"application/json","Cache-Control":"no-cache"},body:JSON.stringify({state:captureState()})});if(!response.ok)throw new Error();const data=await response.json();lastRemoteUpdate=data.updated_at;localChangesPending=false;setSyncStatus("Datos sincronizados")}
+  catch(error){setSyncStatus("Sin conexión para guardar · reintentando");if(!syncSaveTimer)syncSaveTimer=setTimeout(saveSharedState,5000)}
 }
 async function loadSharedState(showStatus=true){
   if(showStatus)setSyncStatus("Cargando datos…");
-  try{const response=await fetch("/api/app-state",{cache:"no-store"});if(!response.ok)throw new Error();const data=await response.json();const changed=data.updated_at&&data.updated_at!==lastRemoteUpdate;if(changed&&applySharedState(data.state)){lastRemoteUpdate=data.updated_at;render()}if(showStatus)setSyncStatus("Datos sincronizados");return Boolean(data.updated_at)}
+  try{const response=await fetch(`/api/app-state?t=${Date.now()}`,{cache:"no-store",headers:{"Cache-Control":"no-cache"}});if(!response.ok)throw new Error();const data=await response.json();const changed=data.updated_at&&data.updated_at!==lastRemoteUpdate;if(changed&&applySharedState(data.state)){lastRemoteUpdate=data.updated_at;render()}if(showStatus)setSyncStatus("Datos sincronizados");return Boolean(data.updated_at)}
   catch(error){if(showStatus)setSyncStatus("Modo local");return false}
 }
 
@@ -190,7 +191,10 @@ $("#saveImage").addEventListener("click",()=>window.print());
 async function initializeApp(){
   const now=new Date(),start=`${String(now.getHours()).padStart(2,"0")}:00`,current=`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`,today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;$("#initialTankTime").value=start;$("#tankTime").value=addOneHour(start);$("#operationTime").value=current;$("#alarmDate").value=today;$("#alarmTime").value=current;$("#tankSelect").innerHTML=Object.keys(window.TANK_CALIBRATION||{}).map(t=>`<option value="${t}">TP-${t.padStart(2,"0")}</option>`).join("");$("#batchEquivalentInput").value=rows[0]?.batch||"";
   const found=await loadSharedState();syncReady=true;render();if(!found)scheduleStateSave();
-  setInterval(()=>{if(!["INPUT","SELECT","TEXTAREA"].includes(document.activeElement?.tagName))loadSharedState(false)},15000);
+  setInterval(()=>{if(!localChangesPending)loadSharedState(false)},3000);
+  window.addEventListener("focus",()=>{if(!localChangesPending)loadSharedState(false)});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&!localChangesPending)loadSharedState(false)});
+  window.addEventListener("online",()=>{if(localChangesPending)saveSharedState();else loadSharedState(true)});
   setInterval(checkScheduledAlarms,30000);checkScheduledAlarms();
 }
 initializeApp();

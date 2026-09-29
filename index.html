@@ -9,7 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link rel="stylesheet" href="styles.css?v=20260929-scada1" />
   </head>
   <body>
     <header class="topbar">
@@ -18,12 +21,22 @@
         <div>
           <p>CONTROL OPERATIVO</p>
           <h1>Estación Reductora Pascuales</h1>
+          <small>Control de Empaquetamiento del Poliducto Libertad – Pascuales</small>
         </div>
       </div>
       <div class="status"><span></span> <b id="syncStatus">Cargando datos…</b></div>
     </header>
 
-    <main>
+    <div class="app-shell">
+      <aside class="scada-sidebar" aria-label="Navegación principal">
+        <a class="nav-item active" href="#empaquetamiento"><span>⌁</span>Empaquetamiento</a>
+        <a class="nav-item" href="#registro-operaciones"><span>▣</span>Registro de operaciones</a>
+        <a class="nav-item" href="#partidas-volumenes"><span>◎</span>Partidas y volúmenes</a>
+        <a class="nav-item" href="#historial-operaciones"><span>◷</span>Historial</a>
+        <a class="nav-item" href="#estado-alarmas"><span>♧</span>Estado y alarmas</a>
+        <a class="nav-item" href="#reportes"><span>▤</span>Reportes</a>
+      </aside>
+    <main class="scada-main">
       <section class="print-report-header" aria-hidden="true">
         <img src="logo-reporte.png" alt="EP Petroecuador" />
         <h1>REPORTE DE OPERACIONES POLIDUCTO LIBERTAD–PASCUALES</h1>
@@ -36,10 +49,10 @@
         </table>
       </section>
       <section class="summary" aria-label="Resumen del ducto">
-        <article><span>Longitud del ducto</span><strong>127 <small>km</small></strong></article>
-        <article><span>Volumen en ducto</span><strong id="totalVolume">0 <small>u</small></strong></article>
-        <article><span>Productos activos</span><strong id="activeProducts">0</strong></article>
-        <article><span>Ocupación calculada</span><strong id="occupancy">100 <small>%</small></strong></article>
+        <article data-icon="↔"><span>Longitud del ducto</span><strong>127 <small>km</small></strong></article>
+        <article data-icon="◇"><span>Volumen en ducto</span><strong id="totalVolume">0 <small>BBL</small></strong></article>
+        <article data-icon="▱"><span>Productos activos</span><strong id="activeProducts">0</strong></article>
+        <article data-icon="◉"><span>Ocupación calculada</span><strong id="occupancy">100 <small>%</small></strong></article>
       </section>
 
       <section class="current-flow-panel" aria-label="Caudal actual">
@@ -47,7 +60,7 @@
         <strong id="currentCalculatedFlow">0 <small>BBL/H</small></strong>
       </section>
 
-      <section class="pipeline-status-panel" aria-label="Estado operativo del poliducto">
+      <section id="estado-alarmas" class="pipeline-status-panel" aria-label="Estado operativo del poliducto">
         <div class="pipeline-status-head">
           <div><span class="eyebrow">ESTADO DEL POLIDUCTO</span><h2 id="operationStatusText">Operación normal</h2></div>
           <div class="section-head-actions"><button id="clearOperationHistory" class="history-clear-button" type="button">Borrar historial</button><span id="operationStatusBadge" class="operation-badge running">EN OPERACIÓN</span></div>
@@ -99,7 +112,7 @@
         </div>
       </section>
 
-      <section class="tank-module" aria-label="Cálculo de volumen por nivel de tanque">
+      <section id="registro-operaciones" class="tank-module" aria-label="Cálculo de volumen por nivel de tanque">
         <div class="tank-module-head">
           <div><h2>Registro de operaciones</h2></div>
           <button id="finishBatch" class="level-reset finish-batch" type="button">Fin de partida</button>
@@ -146,7 +159,7 @@
           </div>
         </div>
         <div id="tankHistoryEmpty" class="hourly-empty">Todavía no se han registrado niveles de tanques.</div>
-        <div class="tank-history-wrap">
+        <div id="historial-operaciones" class="tank-history-wrap">
           <table class="tank-history-table">
             <thead><tr><th>Hora</th><th>Succión PSI</th><th>Grado API</th><th>Temperatura °F</th><th>Partida equivalente</th><th>Producto</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th><th>Observaciones</th><th>Acciones</th></tr></thead>
             <tbody id="tankHistory"></tbody>
@@ -154,8 +167,8 @@
         </div>
       </section>
 
-      <section class="workspace">
-        <article class="panel inputs-panel">
+      <section id="empaquetamiento" class="workspace">
+        <article id="partidas-volumenes" class="panel inputs-panel">
           <div class="panel-head">
             <div><h2>Partidas y volúmenes</h2></div>
             <button id="addRow" class="button secondary" type="button">+ Agregar</button>
@@ -180,8 +193,12 @@
           </div>
 
           <div class="terminal-labels"><span>LIBERTAD · KM 0</span><span>PASCUALES · KM 127</span></div>
-          <div class="pipe-shell">
-            <div id="pipeline" class="pipeline" role="img" aria-label="Distribución de productos en el ducto"></div>
+          <div class="scada-pipeline-stage">
+            <div class="station-visual pump-visual" aria-label="Estación de bombeo Libertad"><span class="pump-motor"></span><span class="pump-body"></span><small>ESTACIÓN DE BOMBEO</small></div>
+            <div class="pipe-shell">
+              <div id="pipeline" class="pipeline" role="img" aria-label="Distribución de productos en el ducto"></div>
+            </div>
+            <div class="station-visual tanks-visual" aria-label="Tanques de recepción Pascuales"><span></span><span></span><small>TANQUES DE RECEPCIÓN</small></div>
           </div>
           <div class="scale" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span><span>127 km</span></div>
           <div id="emptyState" class="empty" hidden>No hay volumen disponible para calcular la posición.</div>
@@ -191,15 +208,16 @@
         </article>
       </section>
 
-      <section class="print-signature" aria-hidden="true">
+      <section id="reportes" class="print-signature" aria-hidden="true">
         <div class="signature-line"></div>
         <strong>TÉCNICO LÍDER DE OPERACIONES</strong>
       </section>
     </main>
+    </div>
 
-    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Versión 23-09-2026.10</footer>
+    <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Interfaz SCADA 29-09-2026</footer>
     <script src="tank-data.js?v=20260908-1"></script>
     <script src="tank-35-data.js?v=20260921-1"></script>
-    <script src="app.js?v=20260923-10"></script>
+    <script src="app.js?v=20260929-scada1"></script>
   </body>
 </html>
