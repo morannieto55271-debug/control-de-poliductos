@@ -58,3 +58,14 @@ También puede probarla localmente abriendo `index.html` en un navegador.
 - Los productos se ubican en el orden de las partidas: la primera fila queda más próxima a Pascuales.
 
 Los datos operativos se sincronizan mediante Supabase y los avisos configurados se envían mediante Telegram.
+
+## Actualización 03-10-2026: reporte y fecha
+
+- Reporte horizontal compacto con logo pequeño, títulos azul oscuro, tablas y firma al final, siguiendo el estilo del reporte de operaciones de referencia.
+- FECHA es la primera columna del registro y del PDF. Seleccione la fecha antes de registrar el caudal; también puede corregirla con Editar.
+- Los registros anteriores sin fecha muestran un guion hasta que el operador complete la fecha real. No se asignan fechas inventadas.
+- La fecha sugerida avanza un día cuando la siguiente hora cruza medianoche.
+- El PDF conserva todos los registros. Si el contenido excede una hoja, continúa en las siguientes sin cortar filas.
+- Este paquete contiene todos los archivos de la versión recuperada con la función de borrar caudales. El histórico operativo almacenado en Supabase no se incluye en el ZIP: se carga mediante la conexión existente al desplegar en el mismo proyecto.
+
+Para actualizar: reemplace los archivos del proyecto existente y vuelva a desplegar; conserve las variables de entorno actuales de Vercel. Al guardar el PDF, use A4 horizontal, escala 100 % y desactive los encabezados/pies del navegador.
