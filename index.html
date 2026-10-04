@@ -12,7 +12,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <link rel="stylesheet" href="styles.css?v=20261002-borrar-caudal1" />
+    <link rel="stylesheet" href="styles.css?v=20261004-fecha-clave1" />
   </head>
   <body>
     <header class="topbar">
@@ -136,6 +136,7 @@
             <div class="reading-block current-reading">
               <div class="reading-title"><h3>Nivel actual</h3><button id="resetCurrentLevel" class="level-reset" type="button">Reiniciar nivel actual</button></div>
               <div class="hourly-reading-fields">
+                <label>Fecha del caudal<input id="tankDate" type="date"></label>
                 <label>Hora del caudal<input id="tankTime" type="time" value="09:00"></label>
                 <label>Succión de la hora <span>PSI</span><input id="suctionPsiInput" type="number" inputmode="numeric" min="0" step="1" value="0"></label>
               </div>
@@ -161,7 +162,7 @@
         <div id="tankHistoryEmpty" class="hourly-empty">Todavía no se han registrado niveles de tanques.</div>
         <div id="historial-operaciones" class="tank-history-wrap">
           <table class="tank-history-table">
-            <thead><tr><th>Hora</th><th>Succión PSI</th><th>Grado API</th><th>Temperatura °F</th><th>Partida equivalente</th><th>Producto</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th><th>Observaciones</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Hora</th><th>Succión PSI</th><th>Grado API</th><th>Temperatura °F</th><th>Partida equivalente</th><th>Producto</th><th>Tanque</th><th>Nivel</th><th>Volumen GLS</th><th>Recibido BBL</th><th>Caudal BBL/H</th><th>Acumulado BBL</th><th>Observaciones</th><th>Acciones</th></tr></thead>
             <tbody id="tankHistory"></tbody>
           </table>
         </div>
@@ -224,6 +225,6 @@
     <footer>Herramienta de apoyo operativo · Verifique los datos antes de tomar decisiones en campo. · Interfaz SCADA FOTOGRÁFICA 29-09-2026</footer>
     <script src="tank-data.js?v=20260908-1"></script>
     <script src="tank-35-data.js?v=20260921-1"></script>
-    <script src="app.js?v=20261004-clave-reset1"></script>
+    <script src="app.js?v=20261004-recibido1"></script>
   </body>
 </html>
