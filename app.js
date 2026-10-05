@@ -224,22 +224,28 @@ function printSingleSheetReport(){
   const doc=frame.contentDocument;
   doc.open();doc.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>REPORTE DE OPERACIONES</title></head><body></body></html>');doc.close();
   const css=doc.createElement("style");
-  css.textContent=`@page{size:420mm 297mm;margin:8mm}*{box-sizing:border-box}body{margin:0;width:404mm;color:#111;background:#fff;font:11pt Arial,sans-serif}header{display:flex;align-items:center;gap:8mm;margin-bottom:4mm}header img{width:45mm;height:auto}h1,h2{font-size:12pt;font-weight:bold;margin:0 0 3mm}section{margin:0 0 4mm;break-inside:avoid}table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #777;padding:1mm;font-size:11pt;line-height:1.15;vertical-align:top}th{background:#e9eef0;font-weight:bold;white-space:normal}td{white-space:nowrap}td:last-child{white-space:normal;overflow-wrap:anywhere}tr{break-inside:avoid}.signature{padding-top:12mm;text-align:center;font-weight:bold;font-size:12pt}.signature span{display:block;border-top:1px solid #111;width:75mm;margin:0 auto 2mm}@media print{body{width:404mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
+  css.textContent=`@page{size:420mm 297mm;margin:8mm}*{box-sizing:border-box}body{margin:0;width:404mm;color:#083d4d;background:#fff;font:11pt Arial,sans-serif}header{text-align:center;margin-bottom:4mm;padding-bottom:3mm;border-bottom:3px solid #a3ed35}header img{display:block;width:28mm;height:15mm;object-fit:contain;margin:0 auto 3mm}h1{font-size:19pt;font-weight:bold;margin:0 0 2mm;color:#083d4d}.subtitle{font-size:11pt;margin:0;color:#637984}h2{font-size:13pt;font-weight:bold;margin:0 0 1mm;padding:1.5mm 2mm;color:#fff;background:#083d4d;border-radius:1mm}section{margin:0 0 4mm;break-inside:avoid}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #beced5;padding:1.5mm;font-size:11pt;line-height:1.18;vertical-align:top;white-space:normal;overflow-wrap:anywhere}th{background:#e7eef1;font-weight:bold}tr{break-inside:avoid}.signature{padding-top:18mm;text-align:center;font-weight:bold;font-size:13pt;break-inside:avoid}.signature span{display:block;border-top:1px solid #083d4d;width:105mm;margin:0 auto 2mm}.signature small{display:block;font-size:10pt;font-weight:normal;margin-top:2mm;color:#637984}footer{text-align:right;margin-top:14mm;font-size:9pt;color:#637984}@media print{body{width:404mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
   doc.head.appendChild(css);
   const header=doc.createElement("header");
   const logo=doc.createElement("img");logo.src=new URL("logo-reporte.png",location.href).href;header.appendChild(logo);
-  const title=doc.createElement("h1");title.textContent=$(".print-report-header h1").textContent;header.appendChild(title);doc.body.appendChild(header);
+  const title=doc.createElement("h1");title.textContent=$(".print-report-header h1").textContent;header.appendChild(title);
+  const subtitle=doc.createElement("p");subtitle.className="subtitle";subtitle.textContent="ESTACIÓN REDUCTORA PASCUALES · CONTROL DE EMPAQUETAMIENTO · GENERADO: "+new Date().toLocaleString("es-EC",{timeZone:"America/Guayaquil"});header.appendChild(subtitle);doc.body.appendChild(header);
   function addTable(title,source,removeActions){
     const section=doc.createElement("section"),heading=doc.createElement("h2");heading.textContent=title;section.appendChild(heading);
     const table=source.cloneNode(true);
     table.querySelectorAll("input,select,textarea").forEach(control=>{const span=doc.createElement("span");span.textContent=control.tagName==="SELECT"?(control.selectedOptions[0]?.textContent||control.value):control.value;control.replaceWith(span)});
     if(removeActions)table.querySelectorAll("tr").forEach(row=>row.lastElementChild?.remove());
-    table.querySelectorAll("button").forEach(button=>button.remove());section.appendChild(table);doc.body.appendChild(section);
+    table.querySelectorAll("button").forEach(button=>button.remove());
+    // Preserve the complete history and reserve space for operational observations.
+    const widths=source.matches(".tank-history-table")?[6.3,3.8,5.1,3.9,6.7,6.1,5.9,4.3,5.1,7,6.1,6.8,6.8,26.1]:source.closest("#partidas-volumenes")?[9,24,19,19,29]:[15,12,32,41];
+    const columns=doc.createElement("colgroup");widths.forEach(width=>{const col=doc.createElement("col");col.style.width=width+"%";columns.appendChild(col)});table.prepend(columns);
+    section.appendChild(table);doc.body.appendChild(section);
   }
-  addTable("REGISTRO DE OPERACIONES",$(".tank-history-table"),true);
-  addTable("PARTIDAS Y VOLÚMENES",$("#partidas-volumenes table"),true);
-  if(!$("#printStopReport").hidden)addTable("ESTADO DEL POLIDUCTO",$("#printStopReport table"),false);
-  const signature=doc.createElement("div");signature.className="signature";signature.innerHTML='<span></span>TÉCNICO LÍDER DE OPERACIONES';doc.body.appendChild(signature);
+  addTable("1. REGISTRO DE OPERACIONES",$(".tank-history-table"),true);
+  addTable("2. PARTIDAS Y VOLÚMENES",$("#partidas-volumenes table"),true);
+  if(!$("#printStopReport").hidden)addTable("3. ESTADO DEL POLIDUCTO",$("#printStopReport table"),false);
+  const signature=doc.createElement("div");signature.className="signature";signature.innerHTML='<span></span>TÉCNICO LÍDER DE OPERACIONES<small>FIRMA</small>';doc.body.appendChild(signature);
+  const footer=doc.createElement("footer");footer.textContent="POLIDUCTO LIBERTAD-PASCUALES · EP PETROECUADOR";doc.body.appendChild(footer);
   const print=()=>{
     const heightMm=Math.max(297,Math.ceil(doc.body.scrollHeight*25.4/96)+20);
     css.textContent+=`@page{size:420mm ${heightMm}mm;margin:8mm}`;
