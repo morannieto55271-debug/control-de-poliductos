@@ -1,4 +1,4 @@
-const APP_VERSION="08-10-2026.ACUMULADO-INICIAL1",PIPE_KM=127,COLORS=["#bdff4a","#24d6d1","#ffb84d","#bda7ff","#ff7b68","#62a8ff","#f279c6","#85d37d","#ffd966"],RESET_PASSWORD_HASH="5ac7aedbdae6f169cc882722963e3d3f29fe6b3aaa6e1303064f06bacc23b7af";
+const APP_VERSION="08-10-2026.ACUMULADO-PARTIDA1",PIPE_KM=127,COLORS=["#bdff4a","#24d6d1","#ffb84d","#bda7ff","#ff7b68","#62a8ff","#f279c6","#85d37d","#ffd966"],RESET_PASSWORD_HASH="5ac7aedbdae6f169cc882722963e3d3f29fe6b3aaa6e1303064f06bacc23b7af";
 const initialRows=[{batch:"126",product:"JET A1",sent:7367,received:1608},{batch:"127",product:"DESTILADO",sent:101,received:0},{batch:"128",product:"DIESEL OIL",sent:36850,received:0}];
 const PRODUCTS=["JET A1","DIESEL OIL","DIESEL PREMIUM","DESTILADO","GASOLINA EXTRA","GASOLINA ECOPAÍS","GASOLINA SÚPER","NAFTA RON 80","NAFTA RON 95","PREMIUM IMP","PREMEZCLA","GASOLINA BASE LIB","GASOLINA BASE ESM"];
 let rows=structuredClone(initialRows),tankRecords=[],forecastFlow=0,flowManuallyEdited=false,accumulationResetIndex=0,editingTankRecordIndex=null;
@@ -64,6 +64,11 @@ function renderTankModule(){
 function recalculateTankAccumulated(){
   let accumulated=safeNumber($("#initialTankAccumulated")?.value);
   tankRecords.forEach((record,index)=>{record.flowBph=safeNumber(record.receivedBbl);if(index>=accumulationResetIndex){accumulated+=safeNumber(record.receivedBbl);record.accumulatedBbl=accumulated}});
+}
+function recalculateTankAccumulatedForBatch(batchEquivalent){
+  const selected=String(batchEquivalent||"").trim().toLowerCase();if(!selected)return;
+  let accumulated=safeNumber($("#initialTankAccumulated")?.value);
+  tankRecords.forEach(record=>{if(String(record.batchEquivalent||"").trim().toLowerCase()!==selected)return;record.flowBph=safeNumber(record.receivedBbl);accumulated+=safeNumber(record.receivedBbl);record.accumulatedBbl=accumulated});
 }
 
 async function checkTelegramAlert(normalized){
@@ -207,7 +212,7 @@ $("#clearAlarmHistory").addEventListener("click",()=>{
 });
 async function checkScheduledAlarms(){try{await fetch("/api/alarm-dispatch",{method:"POST"});await loadSharedState(false)}catch(error){console.warn("Verificación de alarmas pendiente")}}
 ["#tankSelect","#batchEquivalentInput","#initialLevelMeters","#initialLevelCentimeters","#initialLevelMillimeters","#levelMeters","#levelCentimeters","#levelMillimeters","#initialTankTime","#tankTime"].forEach(s=>$(s).addEventListener("input",renderTankModule));
-$("#initialTankAccumulated").addEventListener("input",()=>{recalculateTankAccumulated();renderTankModule()});
+$("#initialTankAccumulated").addEventListener("input",()=>{recalculateTankAccumulatedForBatch($("#batchEquivalentInput").value);renderTankModule()});
 $("#suctionPsiInput").addEventListener("change",event=>{event.target.value=Math.round(safeNumber(event.target.value));scheduleStateSave()});
 $("#registerTankLevel").addEventListener("click",()=>{
   const calc=tankCalculation(),base=tankCalculation("initial"),message=$("#tankMessage"),date=$("#tankDate").value,initialTime=$("#initialTankTime").value,time=$("#tankTime").value;if(!calc.valid||!base.valid||!date||!initialTime||!time){message.textContent=!base.valid?`Nivel inicial: ${base.message}`:!calc.valid?`Nivel actual: ${calc.message}`:!date?"Seleccione la fecha del caudal.":"Seleccione la hora inicial y la hora actual.";message.className="transfer-message";return}
