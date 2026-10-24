@@ -106,3 +106,15 @@ footer{margin-left:194px;color:#6e8ba0}.print-report-header{display:none}
 
 /* Ajuste de columnas al incorporar Fecha */
 .tank-history-table td:nth-child(5){font-weight:400;color:inherit}.tank-history-table td:nth-child(6),.tank-history-table td:nth-child(7){font-weight:700;color:var(--lime)}
+
+/* Tubería cilíndrica y colores fijos por producto 24-10-2026 */
+.pipe-shell{position:relative;margin:0 10px!important;padding:7px 14px!important;border:3px solid #91a5b2!important;border-radius:999px!important;background:linear-gradient(180deg,#dce5ea 0%,#667c8b 18%,#263d4d 50%,#8398a5 82%,#dce5ea 100%)!important;box-shadow:inset 0 2px 4px rgba(255,255,255,.7),inset 0 -3px 5px rgba(0,0,0,.55),0 0 0 3px #1d3444,0 13px 25px rgba(0,0,0,.48)!important}
+.pipe-shell:before,.pipe-shell:after{content:"";position:absolute;top:-8px;bottom:-8px;width:23px;border:3px solid #9eb1bc;border-radius:50%;background:linear-gradient(90deg,#263c4b,#c9d5db 42%,#526a79 72%,#1e3342);box-shadow:inset 2px 0 3px rgba(255,255,255,.4),0 4px 8px rgba(0,0,0,.45);z-index:8;pointer-events:none}
+.pipe-shell:before{left:-11px}.pipe-shell:after{right:-11px;transform:scaleX(-1)}
+.pipeline{position:relative;height:86px!important;border-radius:999px!important;overflow:hidden;background:#183041!important;box-shadow:inset 0 15px 16px rgba(255,255,255,.25),inset 0 -18px 20px rgba(0,0,0,.42),inset 0 0 0 2px rgba(4,18,28,.75)!important}
+.pipeline:before{content:"";position:absolute;inset:5px 9px auto;height:25%;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.48),rgba(255,255,255,.06));z-index:6;pointer-events:none}
+.pipeline:after{content:"";position:absolute;inset:auto 6px 5px;height:24%;border-radius:999px;background:rgba(0,0,0,.18);filter:blur(3px);z-index:6;pointer-events:none}
+.pipe-segment{z-index:2;border-right:3px solid rgba(18,34,44,.72)!important;background:linear-gradient(180deg,rgba(255,255,255,.42) 0%,rgba(255,255,255,.12) 26%,rgba(0,0,0,.02) 51%,rgba(0,0,0,.30) 100%),var(--product-color)!important;box-shadow:none!important}
+.pipe-segment span{position:relative;z-index:7;color:inherit!important;text-shadow:0 1px 1px rgba(255,255,255,.25),0 -1px 1px rgba(0,0,0,.25)!important}
+.dot{border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.12),0 0 8px currentColor}
+@media(max-width:760px){.pipe-shell{margin:0 6px!important;padding:5px 10px!important}.pipeline{height:72px!important}.pipe-shell:before,.pipe-shell:after{width:18px}.pipe-shell:before{left:-9px}.pipe-shell:after{right:-9px}}
