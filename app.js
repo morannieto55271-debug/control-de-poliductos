@@ -1,4 +1,4 @@
-const APP_VERSION="24-10-2026.TUBERIA-COLORES1",PIPE_KM=127,RESET_PASSWORD_HASH="5ac7aedbdae6f169cc882722963e3d3f29fe6b3aaa6e1303064f06bacc23b7af";
+const APP_VERSION="23-10-2026.POLIDUCTO-INDUSTRIAL2",PIPE_KM=127,RESET_PASSWORD_HASH="5ac7aedbdae6f169cc882722963e3d3f29fe6b3aaa6e1303064f06bacc23b7af";
 const PRODUCT_COLORS={"DIESEL PREMIUM":"#9AD95B","DIESEL OIL":"#B8860B","JET":"#DDE3E8","JET A1":"#DDE3E8","DESTILADO":"#4B5563","PREMEZCLA":"#1565C0","NAFTA 80":"#78CFF0","NAFTA RON 80":"#78CFF0","NAFTA 95":"#F5DF78","NAFTA RON 95":"#F5DF78"};
 const normalizeProductName=value=>String(value||"").trim().toUpperCase().replace(/\s+/g," "),productColor=product=>PRODUCT_COLORS[normalizeProductName(product)]||"#7B8E9B",productTextColor=product=>["DESTILADO","PREMEZCLA"].includes(normalizeProductName(product))?"#FFFFFF":"#10202A";
 const initialRows=[{batch:"126",product:"JET A1",sent:7367,received:1608},{batch:"127",product:"DESTILADO",sent:101,received:0},{batch:"128",product:"DIESEL OIL",sent:36850,received:0}];

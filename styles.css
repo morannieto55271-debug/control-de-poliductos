@@ -118,3 +118,14 @@ footer{margin-left:194px;color:#6e8ba0}.print-report-header{display:none}
 .pipe-segment span{position:relative;z-index:7;color:inherit!important;text-shadow:0 1px 1px rgba(255,255,255,.25),0 -1px 1px rgba(0,0,0,.25)!important}
 .dot{border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.12),0 0 8px currentColor}
 @media(max-width:760px){.pipe-shell{margin:0 6px!important;padding:5px 10px!important}.pipeline{height:72px!important}.pipe-shell:before,.pipe-shell:after{width:18px}.pipe-shell:before{left:-9px}.pipe-shell:after{right:-9px}}
+
+/* Poliducto industrial recto: pared de acero y producto visible */
+.pipe-shell{height:76px!important;margin:0 5px!important;padding:10px 14px!important;border:0!important;border-radius:12px!important;background:linear-gradient(180deg,#263b49 0 8%,#aebbc3 9% 17%,#344c5b 18% 25%,#162a37 26% 73%,#344c5b 74% 81%,#aebbc3 82% 90%,#263b49 91% 100%)!important;box-shadow:0 0 0 3px #0d1d28,0 9px 18px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.5),inset 0 -2px rgba(0,0,0,.6)!important}
+.pipe-shell:before,.pipe-shell:after{top:-7px!important;bottom:-7px!important;width:16px!important;border:2px solid #b6c3ca!important;border-radius:4px!important;background:linear-gradient(90deg,#263d4c,#98aab5 45%,#334c5b)!important;box-shadow:0 0 0 2px #172b38,0 5px 9px rgba(0,0,0,.48),inset 2px 0 rgba(255,255,255,.32)!important}
+.pipe-shell:before{left:-8px!important}.pipe-shell:after{right:-8px!important;transform:none!important}
+.pipeline{height:56px!important;border-radius:5px!important;background:#102633!important;box-shadow:inset 0 4px 7px rgba(255,255,255,.14),inset 0 -7px 9px rgba(0,0,0,.42),0 0 0 2px #07151e!important}
+.pipeline:before{inset:3px 3px auto!important;height:9px!important;border-radius:3px!important;background:linear-gradient(180deg,rgba(255,255,255,.38),rgba(255,255,255,.04))!important}
+.pipeline:after{inset:auto 3px 3px!important;height:8px!important;border-radius:2px!important;background:rgba(0,0,0,.2)!important;filter:none!important}
+.pipe-segment{border-right:5px solid #263d4a!important}
+.pipe-segment span{font-size:11px!important;font-weight:800!important}
+@media(max-width:760px){.pipe-shell{height:63px!important;margin:0 4px!important;padding:8px 10px!important}.pipeline{height:47px!important}.pipe-shell:before,.pipe-shell:after{width:12px!important}.pipe-shell:before{left:-6px!important}.pipe-shell:after{right:-6px!important}}
